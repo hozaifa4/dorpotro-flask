@@ -31,33 +31,33 @@
 <body class="min-h-screen flex flex-col font-sans">
 
   <!-- Header Navbar -->
-  <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#0b1c30]/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 py-3 shadow-xs">
-    <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+  <header class="sticky top-0 z-30 bg-white/90 dark:bg-[#0b1c30]/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 py-3 shadow-xs">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
       
       <!-- Brand Logo -->
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md">
           <i data-lucide="building-2"></i>
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
-              DORPOTRO<span className="text-emerald-500">.BD</span>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-black tracking-tight text-slate-900 dark:text-white">
+              DORPOTRO<span class="text-emerald-500">.BD</span>
             </h1>
-            <span className="text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+            <span class="text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">
               INTEL
             </span>
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
             Bangladesh e-GP Live Tender Portal
           </div>
         </div>
       </div>
 
       <!-- Right Actions -->
-      <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>Live Tenders: <strong id="header-total-count">{{ total_count }}</strong></span>
         </div>
 
@@ -75,7 +75,7 @@
   </header>
 
   <!-- Main Explorer -->
-  <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
     
     <!-- Search & Filter Card -->
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
@@ -210,7 +210,7 @@
       </div>
 
       <div class="p-4 space-y-4 text-xs">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
           <div>
             <div class="text-[10px] text-slate-400 uppercase">Doc Price</div>
             <div id="modal-price" class="font-bold">--</div>
@@ -353,9 +353,8 @@
             </div>
             <div class="text-[11px] text-slate-400 mb-2 truncate">PE: ${t.procuringEntity}</div>
             <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100 line-clamp-2 mb-3 cursor-pointer hover:text-emerald-500">${t.packageDescription || t.briefDescription}</h3>
-            <div class="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg mb-3 text-center text-xs">
-              <div><div class="text-[10px] text-slate-400 uppercase">Price</div><div class="font-bold">${formatBDT(t.documentPrice)}</div></div>
-              <div><div class="text-[10px] text-slate-400 uppercase">Security</div><div class="font-bold">${formatBDT(t.securityAmount)}</div></div>
+            <div class="grid grid-cols-2 gap-1 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg mb-3 text-center text-xs">
+              <div><div class="text-[10px] text-slate-400 uppercase">Doc / Sec</div><div class="font-bold text-[11px]">${formatBDT(t.documentPrice)} / ${formatBDT(t.securityAmount)}</div></div>
               <div><div class="text-[10px] text-slate-400 uppercase">Est. Cost</div><div class="font-bold text-emerald-500 truncate">${t.estimatedCost || 'Rate Contract'}</div></div>
             </div>
           </div>

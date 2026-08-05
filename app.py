@@ -266,7 +266,30 @@ load_all_tenders()
 @app.route("/")
 @app.route("/<path:path>")
 def index(path=""):
-    return render_template("index.html")
+    now = datetime.now()
+    districts = sorted(list(set(t.get('procuringDistrict', 'Dhaka') for t in dataset_cache if t.get('procuringDistrict'))))
+    orgs = sorted(list(set(t.get('organization', '') for t in dataset_cache if t.get('organization'))))
+    pes = sorted(list(set(t.get('procuringEntity', '') for t in dataset_cache if t.get('procuringEntity'))))
+    
+    active_count = 0
+    archived_count = 0
+    for t in dataset_cache:
+        try:
+            date_part = t['documentLastSellingDate'].split(' ')[0]
+            if datetime.strptime(date_part, '%Y-%m-%d') >= now:
+                active_count += 1
+            else:
+                archived_count += 1
+        except:
+            active_count += 1
+
+    return render_template("index.html", 
+                           total_count=len(dataset_cache),
+                           active_count=active_count,
+                           archived_count=archived_count,
+                           districts=districts, 
+                           orgs=orgs, 
+                           pes=pes)
 
 @app.route("/api/tenders")
 def api_tenders():
