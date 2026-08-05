@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DORPOTRO.BD | Bangladesh e-GP Live Tender Intelligence Portal</title>
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              900: '#0b1c30'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+  <!-- Header Navbar -->
+  <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#0b1c30]/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 py-3 shadow-xs">
+    <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md">
+          <i data-lucide="building-2"></i>
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
+              DORPOTRO<span className="text-emerald-500">.BD</span>
+            </h1>
+            <span className="text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              INTEL
+            </span>
+          </div>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+            Bangladesh e-GP Live Tender Portal
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Actions -->
+      <div className="flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Live Tenders: <strong id="header-total-count">{{ total_count }}</strong></span>
+        </div>
+
+        <button 
+          id="theme-toggle-btn"
+          class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          title="Toggle Dark Mode"
+        >
+          <i data-lucide="sun" id="sun-icon"></i>
+          <i data-lucide="moon" id="moon-icon" class="hidden"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Explorer -->
+  <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+    
+    <!-- Search & Filter Card -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+      
+      <!-- Search Input -->
+      <div class="relative flex items-center">
+        <i data-lucide="search" class="absolute left-4 text-emerald-500 pointer-events-none w-4 h-4"></i>
+        <input 
+          type="text" 
+          id="search-input"
+          placeholder="Search by ID, keyword, ref or ministry..."
+          class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl pl-11 pr-24 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
+        />
+        <button 
+          id="clear-search-btn"
+          class="hidden absolute right-3 text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded-md"
+        >
+          Clear
+        </button>
+      </div>
+
+      <!-- Filters Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 text-xs">
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nature</label>
+          <select id="filter-nature" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg p-2 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500">
+            <option value="All">All Natures</option>
+            <option value="Works">Works</option>
+            <option value="Goods">Goods</option>
+            <option value="Services">Services</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Method</label>
+          <select id="filter-method" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg p-2 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500">
+            <option value="All">All Methods</option>
+            <option value="OTM">Open Tendering (OTM)</option>
+            <option value="LTM">Limited Tendering (LTM)</option>
+            <option value="RFQ">Quotation (RFQ)</option>
+            <option value="DPM">Direct (DPM)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">District</label>
+          <select id="filter-district" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg p-2 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500">
+            <option value="All">All Districts</option>
+            {% for d in districts %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Organization</label>
+          <select id="filter-org" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg p-2 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 truncate">
+            <option value="All">All Organizations</option>
+            {% for o in orgs %}
+            <option value="{{ o }}">{{ o }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">PE Entity</label>
+          <select id="filter-pe" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg p-2 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 truncate">
+            <option value="All">All Procuring Entities</option>
+            {% for pe in pes %}
+            <option value="{{ pe }}">{{ pe }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Tabs & Reset Bar -->
+      <div class="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 text-xs flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <button id="tab-active-btn" class="tab-btn px-3 py-1 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+            Active ({{ active_count }})
+          </button>
+          <button id="tab-archived-btn" class="tab-btn px-3 py-1 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+            Archived ({{ archived_count }})
+          </button>
+          <button id="tab-all-btn" class="tab-btn px-3 py-1 rounded-lg font-bold bg-emerald-600 text-white">
+            ALL ({{ total_count }})
+          </button>
+        </div>
+
+        <button id="reset-filters-btn" class="text-xs font-semibold text-slate-500 hover:text-emerald-500 flex items-center gap-1">
+          <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Reset Filters
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Results Header -->
+    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+      <div>Showing <strong id="matching-count-text" class="text-slate-900 dark:text-white">{{ total_count }}</strong> matching tenders</div>
+      <div id="page-indicator-text">Page 1 of 1</div>
+    </div>
+
+    <!-- Tender Cards Grid -->
+    <div id="tenders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Dynamically populated -->
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination-container" class="flex items-center justify-center gap-2 pt-4">
+      <button id="prev-page-btn" class="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+      </button>
+      <span id="page-num-display" class="text-xs font-semibold px-4">Page 1</span>
+      <button id="next-page-btn" class="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40">
+        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Tender Details Modal -->
+  <div id="tender-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex items-start justify-between gap-3">
+        <div>
+          <span id="modal-id-badge" class="text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded">ID: --</span>
+          <h2 id="modal-title" class="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1">--</h2>
+        </div>
+        <button id="close-modal-btn" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-4 space-y-4 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase">Doc Price</div>
+            <div id="modal-price" class="font-bold">--</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase">Security</div>
+            <div id="modal-security" class="font-bold">--</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase">Est. Budget</div>
+            <div id="modal-est-cost" class="font-bold text-emerald-500">--</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase">District</div>
+            <div id="modal-district" class="font-bold">--</div>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
+          <div id="modal-org" class="font-bold text-slate-800 dark:text-slate-200">--</div>
+          <div id="modal-pe" class="text-slate-500 mt-1">--</div>
+        </div>
+
+        <div>
+          <h4 class="font-bold mb-1">Description & Scope</h4>
+          <p id="modal-desc" class="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl text-slate-600 dark:text-slate-300">--</p>
+        </div>
+
+        <div>
+          <h4 class="font-bold mb-1">Eligibility</h4>
+          <p id="modal-eligibility" class="bg-emerald-500/5 border border-emerald-500/20 p-3 rounded-xl text-slate-600 dark:text-slate-300">--</p>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+        <button id="modal-cancel-btn" class="px-4 py-2 text-xs font-semibold">Close</button>
+        <a id="modal-egp-link" href="#" target="_blank" class="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+          Open on e-GP Portal <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript App Logic -->
+  <script>
+    let currentTenders = [];
+    let activeTab = 'all';
+    let currentPage = 1;
+    const itemsPerPage = 12;
+
+    // Theme Toggle
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    themeBtn.addEventListener('click', () => {
+      htmlEl.classList.toggle('dark');
+      lucide.createIcons();
+    });
+
+    // Format BDT
+    function formatBDT(amount) {
+      if (!amount) return '৳ 0';
+      if (amount >= 10000000) return `৳ ${(amount / 10000000).toFixed(2)} Cr`;
+      if (amount >= 100000) return `৳ ${(amount / 100000).toFixed(2)} L`;
+      return `৳ ${amount.toLocaleString('en-IN')}`;
+    }
+
+    // Days Left calculation
+    function getDaysLeftText(deadlineStr) {
+      try {
+        const datePart = deadlineStr.split(' ')[0];
+        const [y, m, d] = datePart.split('-').map(Number);
+        const deadline = new Date(y, m - 1, d);
+        const now = new Date();
+        const diffDays = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return '<span class="text-amber-500 font-semibold">Expired</span>';
+        if (diffDays === 0) return '<span class="text-red-500 font-semibold">Today</span>';
+        return `<span class="text-slate-600 dark:text-slate-300 font-medium">${diffDays} Days</span>`;
+      } catch (e) {
+        return 'N/A';
+      }
+    }
+
+    // Fetch and render tenders
+    async function loadTenders() {
+      const q = document.getElementById('search-input').value;
+      const nature = document.getElementById('filter-nature').value;
+      const method = document.getElementById('filter-method').value;
+      const district = document.getElementById('filter-district').value;
+      const org = document.getElementById('filter-org').value;
+      const pe = document.getElementById('filter-pe').value;
+
+      const params = new URLSearchParams({
+        q, nature, method, district, org, pe, tab: activeTab
+      });
+
+      const res = await fetch(`/api/tenders?${params}`);
+      const data = await res.json();
+      currentTenders = data.tenders;
+
+      document.getElementById('matching-count-text').innerText = data.total;
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('tenders-grid');
+      grid.innerHTML = '';
+
+      const totalPages = Math.ceil(currentTenders.length / itemsPerPage) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      document.getElementById('page-indicator-text').innerText = `Page ${currentPage} of ${totalPages}`;
+      document.getElementById('page-num-display').innerText = `Page ${currentPage}`;
+      document.getElementById('prev-page-btn').disabled = (currentPage === 1);
+      document.getElementById('next-page-btn').disabled = (currentPage === totalPages);
+
+      const start = (currentPage - 1) * itemsPerPage;
+      const pageData = currentTenders.slice(start, start + itemsPerPage);
+
+      if (pageData.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-500">
+            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">No tenders match your filter criteria</h3>
+          </div>
+        `;
+        return;
+      }
+
+      pageData.forEach(t => {
+        const card = document.createElement('div');
+        card.className = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-2 flex-wrap text-xs">
+              <span class="font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">ID: ${t.id}</span>
+              <span class="font-bold bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded">${t.procurementMethod}</span>
+              <span class="font-bold text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-600">${t.procurementNature}</span>
+            </div>
+            <div class="text-xs text-slate-500 mb-1 flex items-center gap-1">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-emerald-500"></i> ${t.procuringDistrict || 'Dhaka'} &bull; ${t.organization}
+            </div>
+            <div class="text-[11px] text-slate-400 mb-2 truncate">PE: ${t.procuringEntity}</div>
+            <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100 line-clamp-2 mb-3 cursor-pointer hover:text-emerald-500">${t.packageDescription || t.briefDescription}</h3>
+            <div class="grid grid-cols-3 gap-1 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg mb-3 text-center text-xs">
+              <div><div class="text-[10px] text-slate-400 uppercase">Price</div><div class="font-bold">${formatBDT(t.documentPrice)}</div></div>
+              <div><div class="text-[10px] text-slate-400 uppercase">Security</div><div class="font-bold">${formatBDT(t.securityAmount)}</div></div>
+              <div><div class="text-[10px] text-slate-400 uppercase">Est. Cost</div><div class="font-bold text-emerald-500 truncate">${t.estimatedCost || 'Rate Contract'}</div></div>
+            </div>
+          </div>
+          <button onclick='openModal(${JSON.stringify(t).replace(/'/g, "&#39;")})' class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5">
+            <span>BID NOW</span> <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+        grid.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Modal Control
+    function openModal(t) {
+      document.getElementById('modal-id-badge').innerText = `ID: ${t.id}`;
+      document.getElementById('modal-title').innerText = t.packageDescription || t.briefDescription;
+      document.getElementById('modal-price').innerText = formatBDT(t.documentPrice);
+      document.getElementById('modal-security').innerText = formatBDT(t.securityAmount);
+      document.getElementById('modal-est-cost').innerText = t.estimatedCost || 'Rate Contract';
+      document.getElementById('modal-district').innerText = t.procuringDistrict || 'Dhaka';
+      document.getElementById('modal-org').innerText = `${t.organization} (${t.ministry})`;
+      document.getElementById('modal-pe').innerText = `PE: ${t.procuringEntity}`;
+      document.getElementById('modal-desc').innerText = t.briefDescription || t.packageDescription;
+      document.getElementById('modal-eligibility').innerText = t.eligibility;
+      document.getElementById('modal-egp-link').href = t.tenderLink;
+
+      document.getElementById('tender-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    document.getElementById('close-modal-btn').addEventListener('click', () => document.getElementById('tender-modal').classList.add('hidden'));
+    document.getElementById('modal-cancel-btn').addEventListener('click', () => document.getElementById('tender-modal').classList.add('hidden'));
+
+    // Listeners
+    document.getElementById('search-input').addEventListener('input', () => { currentPage = 1; loadTenders(); });
+    ['filter-nature', 'filter-method', 'filter-district', 'filter-org', 'filter-pe'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => { currentPage = 1; loadTenders(); });
+    });
+
+    document.getElementById('prev-page-btn').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderGrid(); } });
+    document.getElementById('next-page-btn').addEventListener('click', () => { currentPage++; renderGrid(); });
+
+    document.getElementById('tab-active-btn').addEventListener('click', (e) => { setTab('active', e.target); });
+    document.getElementById('tab-archived-btn').addEventListener('click', (e) => { setTab('archived', e.target); });
+    document.getElementById('tab-all-btn').addEventListener('click', (e) => { setTab('all', e.target); });
+
+    function setTab(tab, el) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.className = "tab-btn px-3 py-1 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700";
+      });
+      el.className = "tab-btn px-3 py-1 rounded-lg font-bold bg-emerald-600 text-white";
+      currentPage = 1;
+      loadTenders();
+    }
+
+    document.getElementById('reset-filters-btn').addEventListener('click', () => {
+      document.getElementById('search-input').value = '';
+      document.getElementById('filter-nature').value = 'All';
+      document.getElementById('filter-method').value = 'All';
+      document.getElementById('filter-district').value = 'All';
+      document.getElementById('filter-org').value = 'All';
+      document.getElementById('filter-pe').value = 'All';
+      setTab('all', document.getElementById('tab-all-btn'));
+    });
+
+    // Initial Load
+    lucide.createIcons();
+    loadTenders();
+  </script>
+</body>
+</html>
