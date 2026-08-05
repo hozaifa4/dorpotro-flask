@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
+app = Flask(__name__, static_folder="dist/assets", static_url_path="/assets", template_folder="dist")
 
 # In-memory tender dataset cache
 dataset_cache = []
@@ -264,32 +264,9 @@ def load_all_tenders():
 load_all_tenders()
 
 @app.route("/")
-def index():
-    districts = sorted(list(set(t['procuringDistrict'] for t in dataset_cache if t.get('procuringDistrict'))))
-    orgs = sorted(list(set(t['organization'] for t in dataset_cache if t.get('organization'))))
-    pes = sorted(list(set(t['procuringEntity'] for t in dataset_cache if t.get('procuringEntity'))))
-    
-    now = datetime.now()
-    active_count = 0
-    archived_count = 0
-    for t in dataset_cache:
-        try:
-            date_part = t['documentLastSellingDate'].split(' ')[0]
-            d = datetime.strptime(date_part, '%Y-%m-%d')
-            if d >= now: active_count += 1
-            else: archived_count += 1
-        except Exception:
-            active_count += 1
-
-    return render_template(
-        "index.html", 
-        total_count=len(dataset_cache),
-        active_count=active_count,
-        archived_count=archived_count,
-        districts=districts,
-        orgs=orgs,
-        pes=pes
-    )
+@app.route("/<path:path>")
+def index(path=""):
+    return render_template("index.html")
 
 @app.route("/api/tenders")
 def api_tenders():
