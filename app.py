@@ -127,8 +127,13 @@ def parse_tender_row(headers, row, row_num):
     pub_date_raw = get_col('Scheduled Tender/Proposal Publication Date and Time', 'Publication Date', 'Publish Date', 'Date')
     sell_date_raw = get_col('Tender/Proposal Document last selling / downloading Date and Time', 'Closing Date', 'Selling Date', 'Last Date')
 
+    tentative_start_raw = get_col('Tentative Start Date', 'Tentative Date of Commencement', 'Start Date')
+    tentative_end_raw = get_col('Tentative End Date', 'Tentative Date of Completion', 'End Date', 'Completion Date')
+
     pub_date = excel_date_to_str(pub_date_raw, "09:00") or "2026-05-21 09:00"
     sell_date = excel_date_to_str(sell_date_raw, "17:00") or "2026-06-21 17:00"
+    tentative_start = excel_date_to_str(tentative_start_raw, "09:00")
+    tentative_end = excel_date_to_str(tentative_end_raw, "17:00")
 
     doc_price_raw = get_col('Tender/Proposal Document Price (In BDT) ', 'Tender/Proposal Document Price (In BDT)', 'Document Price', 'Doc Price', 'Doc Fee', 'Price')
     doc_price = int(parse_num(doc_price_raw)) if doc_price_raw else 500
@@ -210,6 +215,8 @@ def parse_tender_row(headers, row, row_num):
         "category": get_col('Category') or "Construction work; Engineering & Repair works; Public Utilities",
         "publicationDate": pub_date,
         "documentLastSellingDate": sell_date,
+        "tentativeStartDate": tentative_start,
+        "tentativeEndDate": tentative_end,
         "eligibility": eligibility,
         "briefDescription": brief_desc,
         "officialInviter": official_name,
