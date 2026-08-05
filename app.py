@@ -179,6 +179,7 @@ def parse_tender_row(headers, row, row_num):
     official_name = get_col('Name of Official Inviting Tender/Proposal') or "Executive Engineer"
     official_desig = get_col('Designation of Official Inviting Tender/Proposal') or "Executive Engineer"
     official_addr = get_col('Address of Official Inviting Tender/Proposal') or get_col('Address') or district
+    phone = get_col('Contact details of Official Inviting Tender/Proposal', 'Phone No', 'Phone', 'Contact') or ""
 
     formatted_est_cost = ""
     if est_cost_amt > 0:
@@ -222,6 +223,7 @@ def parse_tender_row(headers, row, row_num):
         "officialInviter": official_name,
         "officialDesignation": official_desig,
         "officialAddress": official_addr,
+        "phone": phone,
         "documentPrice": doc_price,
         "securityAmount": security_amt,
         "estimatedCost": formatted_est_cost,
