@@ -152,17 +152,11 @@ def parse_tender_row(headers, row, row_num):
     district = get_col('District', 'Procuring Entity District', 'City', 'Location') or "Dhaka"
 
     nature = get_col('Procurement Nature', 'Nature') or "Works"
-    if nature not in ["Works", "Goods", "Services"]:
+    if not nature:
         nature = "Works"
 
     method_raw = get_col('Procurement Method ', 'Procurement Method', 'Method') or "Open Tendering Method (OTM)"
-    method = "Open Tendering Method (OTM)"
-    if "LTM" in method_raw or "Limited" in method_raw:
-        method = "Limited Tendering Method (LTM)"
-    elif "RFQ" in method_raw or "Quotation" in method_raw:
-        method = "Request for Quotation (RFQ)"
-    elif "DPM" in method_raw or "Direct" in method_raw:
-        method = "Direct Procurement Method (DPM)"
+    method = method_raw.strip() if method_raw.strip() else "Open Tendering Method (OTM)"
 
     pkg_raw = get_col('Tender/Proposal Package No. and Description', 'Brief Description of Works', 'Project Name', 'Package Description', 'Description', 'Title')
     package_no = f"PKG-{tender_id}"
