@@ -228,6 +228,7 @@ def load_all_tenders():
     global dataset_cache
     root_dir = os.path.dirname(os.path.abspath(__file__))
     raw_dir = os.path.join(root_dir, "raw_datasets")
+    json_cache_path = os.path.join(raw_dir, "tenders_parsed_cache.json")
 
     files = (
         glob.glob(os.path.join(raw_dir, "*.xlsx")) + 
@@ -235,6 +236,22 @@ def load_all_tenders():
     )
     files = sorted(list(set(files)))
 
+    # Compute max modification time across all raw dataset files
+    max_mtime = max((os.path.getmtime(f) for f in files), default=0)
+
+    # Fast path: Load from JSON cache if valid and up to date
+    if os.path.exists(json_cache_path):
+        cache_mtime = os.path.getmtime(json_cache_path)
+        if cache_mtime >= max_mtime:
+            try:
+                with open(json_cache_path, 'r', encoding='utf-8') as f:
+                    dataset_cache = json.load(f)
+                print(f"⚡ [Fast-Path JSON Cache] Loaded {len(dataset_cache)} tenders in sub-10ms.")
+                return
+            except Exception as e:
+                print(f"JSON cache read error: {e}, re-parsing Excel datasets...")
+
+    print("🔍 Parsing raw Excel/CSV datasets...")
     tenders_by_id = {}
     for filepath in sorted(files):
         fname = os.path.basename(filepath)
@@ -261,6 +278,15 @@ def load_all_tenders():
     unique_tenders = list(tenders_by_id.values())
     unique_tenders.sort(key=lambda t: (t.get('publicationDate', ''), int(t['id']) if str(t.get('id','')).isdigit() else 0), reverse=True)
     dataset_cache = unique_tenders
+
+    # Save to JSON cache for fast subsequent loads
+    try:
+        with open(json_cache_path, 'w', encoding='utf-8') as f:
+            json.dump(dataset_cache, f, ensure_ascii=False)
+        print(f"💾 Saved {len(dataset_cache)} tenders to fast JSON cache ({json_cache_path}).")
+    except Exception as e:
+        print(f"Warning: Failed to write JSON cache: {e}")
+
     print(f"Flask Data Engine loaded {len(dataset_cache)} tenders into memory.")
 
 # Load tenders immediately on module import
