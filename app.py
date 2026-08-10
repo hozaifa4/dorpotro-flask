@@ -234,22 +234,27 @@ def load_all_tenders():
         glob.glob(os.path.join(raw_dir, "*.xlsx")) + 
         glob.glob(os.path.join(raw_dir, "*.csv"))
     )
-    files = sorted(list(set(files)))
+    # Ignore the cache file itself if returned by glob
+    files = sorted([f for f in list(set(files)) if not f.endswith("tenders_parsed_cache.json")])
 
-    # Compute max modification time across all raw dataset files
-    max_mtime = max((os.path.getmtime(f) for f in files), default=0)
+    # Build manifest of current dataset files (filename -> filesize)
+    current_manifest = {os.path.basename(f): os.path.getsize(f) for f in files}
 
-    # Fast path: Load from JSON cache if valid and up to date
+    # Fast path: Load from JSON cache if manifest matches exactly
     if os.path.exists(json_cache_path):
-        cache_mtime = os.path.getmtime(json_cache_path)
-        if cache_mtime >= max_mtime:
-            try:
-                with open(json_cache_path, 'r', encoding='utf-8') as f:
-                    dataset_cache = json.load(f)
-                print(f"⚡ [Fast-Path JSON Cache] Loaded {len(dataset_cache)} tenders in sub-10ms.")
+        try:
+            with open(json_cache_path, 'r', encoding='utf-8') as f:
+                cache_data = json.load(f)
+            
+            # Support both old list format and new dict format with manifest
+            if isinstance(cache_data, dict) and cache_data.get("manifest") == current_manifest:
+                dataset_cache = cache_data.get("tenders", [])
+                print(f"⚡ [Fast-Path JSON Cache] Loaded {len(dataset_cache)} tenders from manifest cache.")
                 return
-            except Exception as e:
-                print(f"JSON cache read error: {e}, re-parsing Excel datasets...")
+            elif isinstance(cache_data, list):
+                print("🔄 Updating legacy cache to manifest-based cache...")
+        except Exception as e:
+            print(f"JSON cache read error: {e}, re-parsing Excel datasets...")
 
     print("🔍 Parsing raw Excel/CSV datasets...")
     tenders_by_id = {}
@@ -279,11 +284,15 @@ def load_all_tenders():
     unique_tenders.sort(key=lambda t: (t.get('publicationDate', ''), int(t['id']) if str(t.get('id','')).isdigit() else 0), reverse=True)
     dataset_cache = unique_tenders
 
-    # Save to JSON cache for fast subsequent loads
+    # Save to JSON cache with current manifest for fast subsequent loads
     try:
+        payload = {
+            "manifest": current_manifest,
+            "tenders": dataset_cache
+        }
         with open(json_cache_path, 'w', encoding='utf-8') as f:
-            json.dump(dataset_cache, f, ensure_ascii=False)
-        print(f"💾 Saved {len(dataset_cache)} tenders to fast JSON cache ({json_cache_path}).")
+            json.dump(payload, f, ensure_ascii=False)
+        print(f"💾 Saved {len(dataset_cache)} tenders to fast manifest JSON cache ({json_cache_path}).")
     except Exception as e:
         print(f"Warning: Failed to write JSON cache: {e}")
 

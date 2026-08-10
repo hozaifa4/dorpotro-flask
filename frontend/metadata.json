@@ -1,0 +1,6 @@
+{
+  "name": "DORPOTRO.BD",
+  "description": "DORPOTRO.BD - Bangladesh’s Smart Tender Intelligence Platform with daily e-GP tender notices, contractor analytics, award trends, and AI-powered probability calculations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
