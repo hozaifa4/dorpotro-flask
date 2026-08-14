@@ -268,10 +268,11 @@ def load_all_tenders():
 
     files = (
         glob.glob(os.path.join(raw_dir, "*.xlsx")) + 
-        glob.glob(os.path.join(raw_dir, "*.csv"))
+        glob.glob(os.path.join(raw_dir, "*.csv")) +
+        glob.glob(os.path.join(raw_dir, "*.json"))
     )
-    # Ignore the cache file itself if returned by glob
-    files = sorted([f for f in list(set(files)) if not f.endswith("tenders_parsed_cache.json")])
+    # Ignore the main generated cache file itself if returned by glob
+    files = sorted([f for f in list(set(files)) if not os.path.basename(f).startswith("~") and not os.path.basename(f).startswith(".") and os.path.basename(f) != "tenders_parsed_cache.json"])
 
     # Build manifest of current dataset files (filename -> filesize)
     current_manifest = {os.path.basename(f): os.path.getsize(f) for f in files}
@@ -290,9 +291,9 @@ def load_all_tenders():
             elif isinstance(cache_data, list):
                 print("🔄 Updating legacy cache to manifest-based cache...")
         except Exception as e:
-            print(f"JSON cache read error: {e}, re-parsing Excel datasets...")
+            print(f"JSON cache read error: {e}, re-parsing datasets...")
 
-    print("🔍 Parsing raw Excel/CSV datasets...")
+    print("🔍 Parsing raw Excel/CSV/JSON datasets...")
     tenders_by_id = {}
     for filepath in sorted(files):
         fname = os.path.basename(filepath)
@@ -302,7 +303,15 @@ def load_all_tenders():
         file_date = excel_date_to_str(file_date_raw, "09:00")
 
         try:
-            if fname.endswith('.xlsx'):
+            if fname.lower().endswith('.json'):
+                with open(filepath, 'r', encoding='utf-8') as jf:
+                    jdata = json.load(jf)
+                    jitems = jdata.get("tenders", jdata) if isinstance(jdata, dict) else jdata
+                    for item in (jitems if isinstance(jitems, list) else [jitems]):
+                        if isinstance(item, dict) and item.get("id"):
+                            tenders_by_id[str(item["id"])] = item
+                continue
+            elif fname.lower().endswith('.xlsx'):
                 rows = read_xlsx_full_rows(filepath)
             else:
                 import csv
