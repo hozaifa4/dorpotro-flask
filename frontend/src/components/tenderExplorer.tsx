@@ -1451,10 +1451,10 @@ export default function TenderExplorer({
                               target="_blank"
                               rel="noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black font-mono py-2.5 rounded-xl text-center flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md hover:shadow-emerald-500/25 active:scale-[0.99] select-none border border-emerald-400/50 text-xs tracking-wider"
+                              className="w-full bg-[#dff0d8] hover:bg-[#d0e9c6] text-[#3c763d] font-black font-mono py-2.5 rounded-xl text-center flex items-center justify-center gap-2 transition-all cursor-pointer shadow-none active:scale-[0.99] select-none border border-[#d6e9c6] text-xs tracking-wider"
                             >
-                              <ExternalLink className="w-3.5 h-3.5 text-slate-950 font-black" strokeWidth={2.5} />
-                              BID NOW
+                              <ExternalLink className="w-3.5 h-3.5 text-[#3c763d] font-black" strokeWidth={2.5} />
+                              e-GP Notice
                             </a>
                           </div>
                         </div>
@@ -1845,10 +1845,10 @@ export default function TenderExplorer({
                       href={activeTender.tenderLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex-grow sm:flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 py-3 rounded-xl font-bold font-mono text-xs text-center flex items-center justify-center gap-2 cursor-pointer transition-all border border-emerald-200/80"
+                      className="flex-grow sm:flex-1 bg-[#dff0d8] hover:bg-[#d0e9c6] text-[#3c763d] py-3 rounded-xl font-bold font-mono text-xs text-center flex items-center justify-center gap-2 cursor-pointer transition-all border border-[#d6e9c6]"
                     >
-                      <ExternalLink className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
-                      BID NOW
+                      <ExternalLink className="w-4 h-4 text-[#3c763d]" strokeWidth={2.5} />
+                      e-GP Notice
                     </a>
                   </div>
 

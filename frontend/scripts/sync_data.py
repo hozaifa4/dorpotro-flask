@@ -18,22 +18,56 @@ def excel_date_to_str(val, default_time="09:00"):
     if not val:
         return ""
     val_str = str(val).strip()
-    # Check if it's an Excel float serial date (e.g. 46166.99652777778)
+    
+    # 1. Excel serial float (e.g. 46163.998611111114)
     try:
         f = float(val_str)
         if 35000 < f < 60000:
             dt = datetime(1899, 12, 30) + timedelta(days=f)
-            return dt.strftime('%Y-%m-%d %H:%M')
+            return dt.strftime('%d-%b-%Y %H:%M')
     except ValueError:
         pass
     
-    # If already a YYYY-MM-DD string
-    if re.match(r'^\d{4}-\d{2}-\d{2}', val_str):
-        if ' ' not in val_str:
-            return f"{val_str} {default_time}"
+    # 2. If YYYY-MM-DD or YYYY-MM-DD HH:MM -> convert to DD-Mon-YYYY (e.g. 30-Nov-2026)
+    m_iso = re.match(r"^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{1,2}:\d{2}))?", val_str)
+    if m_iso:
+        y, m, d, t = m_iso.groups()
+        try:
+            dt = datetime(int(y), int(m), int(d))
+            if t:
+                return f"{dt.strftime('%d-%b-%Y')} {t}"
+            return dt.strftime('%d-%b-%Y')
+        except Exception:
+            pass
+
+    # 3. If DD-Mon-YYYY (e.g. 02-Aug-2026 or 02-Aug-2026 23:50)
+    m_bd = re.match(r"^(\d{1,2}-[A-Za-z]{3}-\d{4})(?:\s+(\d{1,2}:\d{2}))?", val_str)
+    if m_bd:
         return val_str
 
     return val_str
+
+def parse_dt(d_str):
+    if not d_str:
+        return datetime.min
+    d_str = str(d_str).strip()
+    try:
+        # 1. DD-Mon-YYYY HH:MM or DD-Mon-YYYY
+        m = re.match(r'^(\d{1,2})-([A-Za-z]{3})-(\d{4})(?:\s+(\d{1,2}:\d{2}))?', d_str)
+        if m:
+            day, mon, year, t = m.groups()
+            t = t or "00:00"
+            return datetime.strptime(f"{day.zfill(2)}-{mon}-{year} {t}", "%d-%b-%Y %H:%M")
+        
+        # 2. YYYY-MM-DD HH:MM or YYYY-MM-DD
+        m2 = re.match(r'^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{1,2}:\d{2}))?', d_str)
+        if m2:
+            y, m, d, t = m2.groups()
+            t = t or "00:00"
+            return datetime.strptime(f"{y}-{m}-{d} {t}", "%Y-%m-%d %H:%M")
+    except Exception:
+        pass
+    return datetime.min
 
 def parse_num(val_str):
     if not val_str:
@@ -83,7 +117,7 @@ def read_xlsx_full_rows(filename):
                 rows.append(row_list)
     return rows
 
-def parse_tender_row(headers, row, row_num):
+def parse_tender_row(headers, row, row_num, file_date=""):
     # Map row by exact column header positions
     h_map = {}
     for idx, h in enumerate(headers):
@@ -132,11 +166,11 @@ def parse_tender_row(headers, row, row_num):
         tender_link = f"https://www.eprocure.gov.bd/resources/common/ViewTender.jsp?id={tender_id}"
 
     # 3. Dates (Publication Date & Selling Date)
-    pub_date_raw = get_col('Scheduled Tender/Proposal Publication Date and Time', 'Publication Date', 'Publish Date', 'Date')
-    sell_date_raw = get_col('Tender/Proposal Document last selling / downloading Date and Time', 'Closing Date', 'Selling Date', 'Last Date')
+    pub_date_raw = get_col('Scheduled Tender/Proposal Publication Date and Time', 'Publication Date', 'Publish Date')
+    sell_date_raw = get_col('Tender/Proposal Document last selling / downloading Date and Time', 'Closing Date', 'Selling Date', 'Last Selling Date')
 
-    pub_date = excel_date_to_str(pub_date_raw, "09:00") or "2026-05-21 09:00"
-    sell_date = excel_date_to_str(sell_date_raw, "17:00") or "2026-06-21 17:00"
+    pub_date = excel_date_to_str(pub_date_raw, "09:00") or file_date or "02-Aug-2026 09:00"
+    sell_date = excel_date_to_str(sell_date_raw, "17:00") or "01-Sep-2026 17:00"
 
     # 4. Amounts & Prices
     doc_price_raw = get_col('Tender/Proposal Document Price (In BDT) ', 'Tender/Proposal Document Price (In BDT)', 'Document Price', 'Doc Price', 'Doc Fee', 'Price')
@@ -269,6 +303,11 @@ def main():
     for filepath in sorted(files):
         fname = os.path.basename(filepath)
         print(f"Processing: {fname}...")
+        # Extract default date from filename (e.g. 02-Aug-2026 -> 2026-08-02 09:00)
+        m = re.search(r'(\d{1,2}-[A-Za-z]{3}-\d{4})', fname)
+        file_date_raw = m.group(1) if m else ""
+        file_date = excel_date_to_str(file_date_raw, "09:00")
+
         try:
             if fname.endswith('.xlsx'):
                 rows = read_xlsx_full_rows(filepath)
@@ -287,7 +326,7 @@ def main():
             parsed_count = 0
             for row_idx, r in enumerate(rows[1:], 1):
                 row_count_total += 1
-                tender = parse_tender_row(headers, r, row_count_total)
+                tender = parse_tender_row(headers, r, row_count_total, file_date=file_date)
                 if tender and tender["id"]:
                     tenders_by_id[tender["id"]] = tender
                     parsed_count += 1
@@ -299,7 +338,7 @@ def main():
 
     unique_tenders = list(tenders_by_id.values())
     # Sort dataset newest first by publicationDate descending, then Tender ID descending
-    unique_tenders.sort(key=lambda t: (t.get('publicationDate', ''), int(t['id']) if str(t.get('id','')).isdigit() else 0), reverse=True)
+    unique_tenders.sort(key=lambda t: (parse_dt(t.get('publicationDate', '')), int(t['id']) if str(t.get('id','')).isdigit() else 0), reverse=True)
 
     print(f"\nTotal raw rows processed across files: {row_count_total}")
     print(f"Total unique, deduplicated tenders extracted: {len(unique_tenders)}")

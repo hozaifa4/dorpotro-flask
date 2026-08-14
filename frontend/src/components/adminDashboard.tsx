@@ -16,7 +16,6 @@ import {
   Tooltip 
 } from 'recharts';
 import { User, Tender } from '../types';
-import { tendersDataset } from '../tenderData';
 import { sanitizeTenderRecord } from '../utils/sanitizeTender';
 
 interface AdminDashboardProps {

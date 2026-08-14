@@ -9,7 +9,6 @@ import {
   Moon, Sun, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { Tender, User, PaymentWebhookLog, SavedFilter, ProactiveNotification } from './types';
-import { tendersDataset } from './tenderData';
 import { sanitizeTenderRecord } from './utils/sanitizeTender';
 import TenderExplorer from './components/tenderExplorer';
 import CTOBlueprint from './components/ctoBlueprint';
@@ -142,12 +141,9 @@ export default function App() {
         const data = await res.json();
         if (data && data.tenders && Array.isArray(data.tenders)) {
           setTenders(data.tenders.map(sanitizeTenderRecord));
-        } else {
-          setTenders(tendersDataset.map(sanitizeTenderRecord));
         }
       } catch (err) {
-        console.warn('Failed to fetch from Flask backend, falling back to local dataset', err);
-        setTenders(tendersDataset.map(sanitizeTenderRecord));
+        console.warn('Failed to fetch from Flask backend', err);
       } finally {
         setIsLoadingTenders(false);
       }
@@ -283,9 +279,10 @@ export default function App() {
       localStorage.removeItem('dorpotro_last_cached_time');
       localStorage.removeItem('dorpotro_simulated_offline');
       
-      setTenders(tendersDataset);
+      setTenders([]);
       setWatchlist([]);
       setIsSimulatedOffline(false);
+      fetchFlaskTenders();
       
       const nowText = new Date().toLocaleString();
       setLastCachedTimestamp(nowText);
@@ -492,9 +489,7 @@ export default function App() {
   });
 
   // Amendment real-time automatic notifications tracking state
-  const [notifiedAmendments, setNotifiedAmendments] = useState<string[]>(() => {
-    return tendersDataset.filter(t => t.hasAmendment).map(t => t.id);
-  });
+  const [notifiedAmendments, setNotifiedAmendments] = useState<string[]>([]);
   
   const [activeAlerts, setActiveAlerts] = useState<{ id: string; tenderId: string; title: string; details: string; timestamp: string }[]>([]);
 

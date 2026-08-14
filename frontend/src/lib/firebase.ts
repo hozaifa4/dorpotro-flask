@@ -1,5 +1,3 @@
-import { tendersDataset } from "../tenderData";
-
 export interface FirebaseUser {
   uid: string;
   displayName: string | null;
@@ -19,15 +17,6 @@ const getLocalCollection = (collectionName: string) => {
     if (raw) return JSON.parse(raw);
   } catch (e) {
     console.error("Local DB read error:", e);
-  }
-
-  // Supply default mock records if collections are empty initially
-  if (collectionName === "tenders") {
-    const defaultMap: any = {};
-    tendersDataset.forEach(t => {
-      defaultMap[t.id] = t;
-    });
-    return defaultMap;
   }
   return {};
 };
