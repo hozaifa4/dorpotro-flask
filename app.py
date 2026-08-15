@@ -264,7 +264,9 @@ def load_all_tenders():
     global dataset_cache
     root_dir = os.path.dirname(os.path.abspath(__file__))
     raw_dir = os.path.join(root_dir, "raw_datasets")
-    json_cache_path = os.path.join(raw_dir, "tenders_parsed_cache.json")
+    json_cache_path = os.path.join(root_dir, "tenders_parsed_cache.json")
+    if not os.path.exists(json_cache_path):
+        json_cache_path = os.path.join(raw_dir, "tenders_parsed_cache.json")
 
     files = (
         glob.glob(os.path.join(raw_dir, "*.xlsx")) + 
@@ -439,9 +441,36 @@ def api_tenders():
 
         filtered.append(t)
 
+    active_cnt = sum(1 for t in dataset_cache if parse_dt(t.get('documentLastSellingDate', '')) >= now)
+    archived_cnt = len(dataset_cache) - active_cnt
+
     return jsonify({
         "total": len(filtered),
+        "active_count": active_cnt,
+        "archived_count": archived_cnt,
+        "last_updated": datetime.now().strftime("%d-%b-%Y %H:%M:%S"),
         "tenders": filtered
+    })
+
+@app.route("/tenders_parsed_cache.json")
+@app.route("/dist/tenders.json")
+@app.route("/tenders.json")
+def serve_tenders_cache():
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    for p in [
+        os.path.join(root_dir, "tenders_parsed_cache.json"),
+        os.path.join(root_dir, "raw_datasets", "tenders_parsed_cache.json"),
+        os.path.join(root_dir, "dist", "tenders.json")
+    ]:
+        if os.path.exists(p):
+            try:
+                with open(p, 'r', encoding='utf-8') as f:
+                    return jsonify(json.load(f))
+            except Exception:
+                pass
+    return jsonify({
+        "total": len(dataset_cache),
+        "tenders": dataset_cache
     })
 
 if __name__ == "__main__":
