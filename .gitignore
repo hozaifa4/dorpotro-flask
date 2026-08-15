@@ -7,4 +7,4 @@ node_modules/
 config.json
 Dorpotro-Uploader/
 Dorpotro-Uploader.zip
-sync_dataset.py
+raw_datasets_backup/
