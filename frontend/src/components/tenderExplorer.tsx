@@ -1198,9 +1198,22 @@ export default function TenderExplorer({
                                   )}
                                 </span>
 
-                                <span className="text-[10px] font-mono bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/60">
-                                  {getShortMethod(tender.procurementMethod)}
-                                </span>
+                                {(() => {
+                                  const methodShort = getShortMethod(tender);
+                                  return (
+                                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold border ${
+                                      methodShort === 'LTM'
+                                        ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700 shadow-2xs'
+                                        : methodShort === 'RFQ'
+                                          ? 'bg-sky-50 text-sky-700 border-sky-200'
+                                          : methodShort === 'DPM'
+                                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                            : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                                    }`}>
+                                      {methodShort}
+                                    </span>
+                                  );
+                                })()}
                                 {offlineState && (
                                   <span className="text-[10px] font-mono bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 px-2 py-0.5 rounded-md font-bold animate-pulse">
                                     📥 Off-line Sync
@@ -1705,10 +1718,33 @@ export default function TenderExplorer({
                               {workingDays !== null ? `${workingDays} Days` : "N/A"}
                             </span>
                           </div>
-                          <div className="bg-slate-50/80 hover:bg-slate-50 border border-slate-200 p-1.5 px-2 rounded-lg flex flex-col justify-center transition-all">
-                            <span className="text-slate-400 text-[10px] uppercase tracking-wider font-extrabold font-mono mb-0.5">Procurement Method</span>
-                            <span className="font-mono text-slate-800 font-semibold leading-tight">{activeTender.procurementMethod}</span>
-                          </div>
+                          {(() => {
+                            const methodShort = getShortMethod(activeTender);
+                            const isLtm = methodShort === 'LTM';
+                            return (
+                              <div className={`p-1.5 px-2 rounded-lg flex flex-col justify-center transition-all ${
+                                isLtm
+                                  ? 'bg-purple-50/90 border border-purple-200 text-purple-800 shadow-2xs'
+                                  : 'bg-slate-50/80 hover:bg-slate-50 border border-slate-200'
+                              }`}>
+                                <span className={`text-[10px] uppercase tracking-wider font-extrabold font-mono mb-0.5 ${isLtm ? 'text-purple-600' : 'text-slate-400'}`}>
+                                  Procurement Method
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`font-mono text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                                    isLtm
+                                      ? 'bg-purple-100 text-purple-800 border-purple-300 font-extrabold'
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  }`}>
+                                    {methodShort}
+                                  </span>
+                                  <span className="font-mono text-slate-800 font-semibold leading-tight truncate text-[11px]">
+                                    {activeTender.procurementMethod}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })()}
                           <div className="bg-slate-50/80 hover:bg-slate-50 border border-slate-200 p-1.5 px-2 rounded-lg flex flex-col justify-center transition-all">
                             <span className="text-slate-400 text-[10px] uppercase tracking-wider font-extrabold font-mono mb-0.5">Invitation Reference</span>
                             <span className="font-mono text-slate-800 font-semibold break-words select-all leading-tight">{activeTender.invitationRefNo}</span>
