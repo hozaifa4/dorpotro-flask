@@ -11,13 +11,7 @@ import {
 import { Tender, User, PaymentWebhookLog, SavedFilter, ProactiveNotification } from './types';
 import { sanitizeTenderRecord } from './utils/sanitizeTender';
 import TenderExplorer from './components/tenderExplorer';
-import CTOBlueprint from './components/ctoBlueprint';
 import AdminDashboard from './components/adminDashboard';
-import SaaSPlatformBlueprint from './components/SaaSPlatformBlueprint';
-import WorkspaceSuite from './components/workspaceSuite';
-import ProcurementNatureChart from './components/ProcurementNatureChart';
-import DepartmentTrendIndicator from './components/DepartmentTrendIndicator';
-import NoaBidOptimizer, { mockNoaDataset } from './components/noaBidOptimizer';
 import TenderAnalytics from './components/TenderAnalytics';
 import DorpotroLogo from './components/DorpotroLogo';
 import { 
@@ -114,7 +108,7 @@ class AppErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundary
 const BD_DISTRICTS = ["Bagerhat", "Bandarban", "Barguna", "Barishal", "Bhola", "Bogura", "Brahmanbaria", "Chandpur", "Chattogram", "Chuadanga", "Cox's Bazar", "Cumilla", "Dhaka", "Dinajpur", "Faridpur", "Feni", "Gaibandha", "Gazipur", "Gopalganj", "Habiganj", "Jamalpur", "Jashore", "Jhalokati", "Jhenaidah", "Joypurhat", "Khagrachhari", "Khulna", "Kishoreganj", "Kurigram", "Kushtia", "Lakshmipur", "Lalmonirhat", "Madaripur", "Magura", "Manikganj", "Meherpur", "Moulvibazar", "Munshiganj", "Mymensingh", "Naogaon", "Narail", "Narayanganj", "Narsingdi", "Natore", "Netrokona", "Nilphamari", "Noakhali", "Pabna", "Panchagarh", "Patuakhali", "Pirojpur", "Rajbari", "Rajshahi", "Rangamati", "Rangpur", "Satkhira", "Shariatpur", "Sherpur", "Sirajganj", "Sunamganj", "Sylhet", "Tangail", "Thakurgaon"];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'tenders' | 'dept' | 'blueprint' | 'admin' | 'workspace' | 'signin' | 'alerts' | 'noa' | 'spec' | 'watchlist' | 'analytics' | 'cache'>('tenders');
+  const [activeTab, setActiveTab] = useState<'tenders' | 'analytics' | 'admin' | 'signin' | 'alerts' | 'watchlist' | 'cache'>('tenders');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
@@ -1390,10 +1384,10 @@ export default function App() {
     <AppErrorBoundary>
       <div className={`min-h-screen ${isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-background-slate text-on-surface'} font-sans leading-relaxed flex flex-col antialiased selection:bg-emerald-500 selection:text-white transition-colors duration-300`}>
          {/* 1. Header TopAppBar (Web & Mobile) */}
-      <header className={`fixed top-0 w-full z-50 shadow-sm flex items-center justify-between px-6 h-16 border-b transition-colors backdrop-blur-xl ${
+      <header className={`fixed top-0 w-full z-50 shadow-sm flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 border-b transition-colors backdrop-blur-xl ${
         isDarkMode ? 'bg-slate-950/90 border-slate-800/80 text-slate-100' : 'bg-white/90 border-slate-200/80 text-slate-900'
       }`}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className={`md:hidden flex items-center p-2 rounded-xl transition-colors cursor-pointer ${
@@ -1404,63 +1398,8 @@ export default function App() {
           </button>
           <DorpotroLogo />
 
-          {/* Left Sidebar Desktop Collapse Toggle Button */}
-          <button
-            type="button"
-            onClick={() => setIsSidebarCollapsed(prev => !prev)}
-            className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition-all cursor-pointer border shadow-2xs ${
-              isDarkMode 
-                ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800' 
-                : 'bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-200'
-            }`}
-            title={isSidebarCollapsed ? "Show Main Navigation Sidebar" : "Hide Main Navigation Sidebar"}
-          >
-            {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4 text-emerald-500" /> : <PanelLeftClose className="w-4 h-4 text-indigo-500" />}
-            <span>{isSidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}</span>
-          </button>
-        </div>
-
-        {/* Dark Mode Toggle Button (Hidden as per request) */}
-        <button
-          type="button"
-          id="btn-dark-mode-toggle"
-          onClick={() => setIsDarkMode(prev => !prev)}
-          className={`hidden items-center gap-2 px-4 py-2 rounded-2xl font-mono text-xs font-extrabold transition-all cursor-pointer border shadow-sm ${
-            isDarkMode 
-              ? 'bg-slate-900 border-amber-400/30 text-amber-400 hover:bg-slate-850 hover:border-amber-400/60 shadow-amber-500/10' 
-              : 'bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200 hover:text-slate-950'
-          }`}
-          title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        >
-          {isDarkMode ? <Sun className="w-4 h-4 text-amber-400 animate-spin-slow" /> : <Moon className="w-4 h-4 text-slate-700" />}
-          <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
-        </button>
-      </header>
-
-      {isAppOffline && (
-        <div className="bg-amber-600 text-white text-[10.5px] font-mono font-bold w-full fixed top-16 left-0 right-0 z-50 flex items-center justify-center gap-2 shadow-md h-7 select-none animate-fadeIn">
-          <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-          <span>OFFLINE RUNTIME DETECTED: browse & analyze cached tenders ({tenders.length} items logged offline)</span>
-          <button 
-            type="button" 
-            onClick={() => {
-              setIsSimulatedOffline(false);
-              localStorage.setItem('dorpotro_simulated_offline', 'false');
-              showToast("Simulated offline mode disabled. Connecting...", "success");
-            }} 
-            className="underline hover:text-indigo-105 bg-amber-700/60 px-2 py-0.5 rounded ml-1 transition-all cursor-pointer"
-          >
-            Go Online
-          </button>
-        </div>
-      )}
-
-      {/* 2. Left Sidebar Navigation (Web) */}
-      {!isSidebarCollapsed && (
-        <aside className={`hidden md:flex ${
-          isDarkMode ? 'bg-slate-900/95 border-slate-800/80 text-slate-100' : 'bg-white/95 text-slate-900 border-slate-200/80'
-        } h-full w-80 border-r shadow-sm flex-col p-4 fixed left-0 top-16 z-40 overflow-y-auto pb-24 transition-all duration-300 backdrop-blur-xl`}>
-          <nav className="flex flex-col gap-1.5 flex-1">
+          {/* Top Horizontal Navigation Bar */}
+          <nav className="hidden md:flex items-center gap-2 ml-4">
             {[
               { id: 'tenders', label: 'Live Tenders (eprocure)', icon: Gavel, badge: tenders.length },
               { id: 'analytics', label: 'Tender Analytics Hub', icon: BarChart3 },
@@ -1475,20 +1414,18 @@ export default function App() {
                     setActiveTab(tab.id as any);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-xs font-mono transition-all text-left cursor-pointer select-none ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs font-mono transition-all cursor-pointer select-none ${
                     isActive 
                       ? isDarkMode 
-                        ? 'bg-gradient-to-r from-emerald-950/80 to-slate-800 text-emerald-400 border border-emerald-500/40 shadow-lg translate-x-1' 
-                        : 'bg-gradient-to-r from-indigo-900 to-slate-900 text-white shadow-lg translate-x-1 border border-indigo-700' 
+                        ? 'bg-gradient-to-r from-emerald-950 to-slate-800 text-emerald-400 border border-emerald-500/40 shadow-sm' 
+                        : 'bg-gradient-to-r from-indigo-900 to-slate-900 text-white shadow-sm border border-indigo-700' 
                       : isDarkMode 
                         ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white border border-transparent' 
                         : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-transparent'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <IconComponent className={`w-4 h-4 ${isActive ? 'text-emerald-400' : isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
-                    <span>{tab.label}</span>
-                  </div>
+                  <IconComponent className={`w-4 h-4 ${isActive ? 'text-emerald-400' : isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+                  <span>{tab.label}</span>
                   {tab.badge !== undefined && (
                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-extrabold ${
                       isActive 
@@ -1502,8 +1439,7 @@ export default function App() {
               );
             })}
           </nav>
-        </aside>
-      )}
+        </div>
 
       {/* 3. Mobile Navigation Drawer menu (Active on toggle) */}
       {mobileMenuOpen && (
@@ -1548,8 +1484,8 @@ export default function App() {
       )}
 
       {/* 4. Main Body Content Area */}
-      <main className={`flex-1 ${isSidebarCollapsed ? 'md:ml-0' : 'md:ml-80'} pb-24 md:pb-12 px-4 sm:px-6 lg:px-8 max-w-[1440px] w-full mx-auto transition-all duration-300 ${
-        isAppOffline ? 'pt-28' : 'pt-20'
+      <main className={`flex-1 md:ml-0 pb-24 md:pb-12 px-3 sm:px-5 lg:px-6 max-w-[1720px] w-full mx-auto transition-all duration-300 ${
+        isAppOffline ? 'pt-24 sm:pt-28' : 'pt-16 sm:pt-20'
       }`}>
 
         {/* TAB 0: GOOGLE ACCOUNT SIGN-IN & CUSTOMIZED ALERTS */}
@@ -3024,166 +2960,7 @@ export default function App() {
           </div>
         )}
 
-        {/* NOA WEB PORTAL & SMART WINNING BID OPTIMIZER */}
-        {activeTab === 'noa' && (
-          <div className="animate-fadeIn">
-            <NoaBidOptimizer 
-              tenders={tenders}
-              currentUser={currentUser}
-              onUpdateCurrentUser={(updated) => {
-                setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
-              }}
-              showToast={showToast}
-            />
-          </div>
-        )}
-
-        {/* TAB 5: DEPARTMENT TRENDS & LGED PROFILE */}
-        {activeTab === 'dept' && (
-          <div className="space-y-8 animate-fadeIn">
-            <div className="border-l-4 border-amber-500 pl-4 space-y-1">
-              <h3 className="text-xl font-display text-primary font-black uppercase tracking-wider">
-                Department Profile: Local Government Engineering Department (LGED)
-              </h3>
-              <p className="text-slate-500 text-xs">
-                In-depth metrics and work focus distribution mappings.
-              </p>
-            </div>
-
-            {/* Profile banner block */}
-            <div className="bg-surface-white border border-border-subtle p-6 rounded-2xl shadow-sm relative overflow-hidden flex flex-col lg:flex-row justify-between gap-6">
-              <div className="relative z-10 flex gap-4 items-center">
-                <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200">
-                  <Landmark className="w-7 h-7 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-primary font-display leading-tight">LGED National Operations Center</h3>
-                  <p className="text-slate-500 text-xs flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5" /> All procuring districts, Bangladesh
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4 items-center font-mono text-xs">
-                <div className="text-right">
-                  <span className="text-[9px] font-bold text-slate-400 block uppercase tracking-widest">Active Notices</span>
-                  <span className="text-base font-bold text-primary">450 listed</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[9px] font-bold text-slate-400 block uppercase tracking-widest">Avg Winning Margin</span>
-                  <span className="text-base font-bold text-[#059669]">-8.2%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bento statistics pie distribution/work category focus */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* Category Focus */}
-              <div className="bg-surface-white border border-border-subtle rounded-xl p-5 shadow-sm flex flex-col">
-                <div className="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
-                  <h4 className="text-xs font-bold uppercase tracking-wide text-primary">Work Category Focus</h4>
-                  <Info className="w-4 h-4 text-slate-400 select-none cursor-help" />
-                </div>
-                <div className="space-y-4 flex-1 flex flex-col justify-center">
-                  <div>
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                      <span className="text-slate-600 font-sans">Roads & Bridges (BC/RCC/CC)</span>
-                      <span className="text-primary font-bold">65%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-primary h-full rounded-full" style={{ width: '65%' }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                      <span className="text-slate-600 font-sans">Primary School Renovation</span>
-                      <span className="text-primary font-bold">20%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-[#6366F1] h-full rounded-full" style={{ width: '20%' }}></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                      <span className="text-slate-600 font-sans">Small Scale Water Resources</span>
-                      <span className="text-primary font-bold">15%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: '15%' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Budget Source Mix */}
-              <div className="bg-surface-white border border-border-subtle rounded-xl p-5 shadow-sm flex flex-col">
-                <div className="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
-                  <h4 className="text-xs font-bold uppercase tracking-wide text-primary">Budget Source Mix</h4>
-                  <Info className="w-4 h-4 text-slate-400 select-none cursor-help" />
-                </div>
-                <div className="space-y-3.5 flex-grow flex flex-col justify-center">
-                  <div className="flex justify-between items-center p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs">
-                    <div className="flex items-center gap-2 font-semibold text-slate-800">
-                      <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0"></div>
-                      GOB Funding
-                    </div>
-                    <span className="font-mono font-bold text-primary">40%</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs">
-                    <div className="flex items-center gap-2 font-semibold text-slate-800">
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></div>
-                      ADP Program
-                    </div>
-                    <span className="font-mono font-bold text-emerald-600">35%</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs">
-                    <div className="flex items-center gap-2 font-semibold text-slate-800">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#6366F1] shrink-0"></div>
-                      Others / WorldBank
-                    </div>
-                    <span className="font-mono font-bold text-[#6366F1]">25%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Upcoming Deadlines */}
-              <div className="bg-surface-white border border-border-subtle rounded-xl p-5 shadow-sm flex flex-col">
-                <div className="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
-                  <h4 className="text-xs font-bold uppercase tracking-wide text-primary">Upcoming Deadlines</h4>
-                  <span className="text-[10px] uppercase font-mono font-bold text-[#6366F1]">Evaluation Soon</span>
-                </div>
-                <div className="space-y-3.5 flex-grow flex flex-col justify-center">
-                  <div className="flex items-center gap-3 bg-[#6366F1]/5 border border-indigo-100 p-2.5 rounded-xl">
-                    <div className="whitespace-nowrap flex flex-col items-center justify-center p-1.5 bg-indigo-150 border border-indigo-200 text-indigo-900 rounded-lg shrink-0 font-mono text-[10px] w-12 text-center">
-                      <span className="font-black">OCT</span>
-                      <span className="font-black text-xs">12</span>
-                    </div>
-                    <div className="min-w-0 text-[11px]">
-                      <span className="font-bold text-primary block truncate">ID: 1275550 - Tata Dump Truck</span>
-                      <p className="text-slate-500 mt-0.5">Est. Price: ৳ 5 Lac</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 bg-[#6366F1]/5 border border-indigo-100 p-2.5 rounded-xl">
-                    <div className="whitespace-nowrap flex flex-col items-center justify-center p-1.5 bg-indigo-150 border border-indigo-200 text-indigo-900 rounded-lg shrink-0 font-mono text-[10px] w-12 text-center">
-                      <span className="font-black">OCT</span>
-                      <span className="font-black text-xs">15</span>
-                    </div>
-                    <div className="min-w-0 text-[11px]">
-                      <span className="font-bold text-primary block truncate">ID: 1284831 - Electrification Works</span>
-                      <p className="text-slate-500 mt-0.5">Est. Price: ৳ 3.5 Lac</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        {/* TAB 7: ADMINISTRATIVE TOOLS & BLUEPRINT */}
+        {/* TAB 7: ADMINISTRATIVE TOOLS */}
         {activeTab === 'admin' && (
           (sessionUserEmail && sessionUserEmail.trim().toLowerCase() === 'dorpotro.bd@gmail.com') ? (
             <div className="space-y-8 animate-fadeIn">
@@ -3218,35 +2995,14 @@ export default function App() {
                 noaSyncStatus={noaSyncStatus}
                 onForceNoaSync={() => runNoaReconciliation(true)}
               />
-
-              <div className="pt-8 border-t border-slate-200">
-                <div className="bg-[#1a2b4c]/15 border border-[#1a2b4c]/30 text-slate-800 p-5 rounded-2xl relative overflow-hidden mb-6">
-                  <span className="text-[10px] font-mono bg-primary text-white border border-primary/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider mb-2.5 inline-block">SANDBOX EXPLANATION</span>
-                  <h3 className="text-base font-bold text-primary font-display">CTO Technical Specification Blueprint</h3>
-                  <p className="text-xs text-slate-600 mt-1.5 max-w-4xl leading-relaxed">
-                    This blueprint validates the underlying architecture for developers. It simulates cron jobs log parsing, shows security authentication verification guard mockups, and simulates the SSLCommerz webhook notification flow for bKash. All schemas are styled in unified light colors to remain cohesive.
-                  </p>
-                </div>
-                <CTOBlueprint 
-                  currentUser={currentUser}
-                  onUpdateCurrentUser={async (updated) => {
-                    const updatedUsers = users.map(u => u.id === updated.id ? updated : u);
-                    await handleUpdateUsers(updatedUsers);
-                  }}
-                  users={users}
-                  onUpdateUsers={handleUpdateUsers}
-                  webhookLogs={webhookLogs}
-                  onUpdateWebhookLogs={handleUpdateWebhookLogs}
-                />
-              </div>
             </div>
           ) : (
             <div className="p-12 bg-white border border-slate-200 rounded-2xl text-center space-y-4 max-w-md mx-auto shadow-sm my-16 font-sans">
-              <div className="w-12 h-12 rounded-full bg-red-105 bg-red-100 text-red-605 text-red-600 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h4 className="text-sm font-bold text-slate-805 text-slate-800">Administrator Access Shield</h4>
-              <p className="text-slate-550 text-xs leading-relaxed font-semibold text-slate-500">
+              <h4 className="text-sm font-bold text-slate-800">Administrator Access Shield</h4>
+              <p className="text-slate-500 text-xs leading-relaxed font-semibold">
                 The administrative panel is exclusively reserved for authorized system administrators.
               </p>
               <button 
@@ -3257,17 +3013,6 @@ export default function App() {
               </button>
             </div>
           )
-        )}
-
-        {/* TAB 8: SAAS SPECIFICATION SUITE */}
-        {activeTab === 'spec' && (
-          <SaaSPlatformBlueprint 
-            currentUser={currentUser}
-            onUpdateCurrentUser={async (updated) => {
-              const updatedUsers = users.map(u => u.id === updated.id ? updated : u);
-              await handleUpdateUsers(updatedUsers);
-            }}
-          />
         )}
 
       </main>

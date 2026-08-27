@@ -3,7 +3,7 @@ import os
 import json
 import re
 from datetime import datetime
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 app = Flask(__name__, static_folder="dist/assets", static_url_path="/assets", template_folder="dist")
 
@@ -166,6 +166,12 @@ def get_tenders_api():
 @app.route("/tenders.json")
 def serve_static_cache():
     return jsonify(load_live_tenders())
+
+@app.route("/sw.js")
+def serve_sw():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    dist_dir = os.path.join(base_dir, "dist")
+    return send_from_directory(dist_dir, "sw.js", mimetype="application/javascript")
 
 if __name__ == "__main__":
     load_live_tenders()

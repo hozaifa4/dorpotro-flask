@@ -10,7 +10,7 @@ import {
   Plus, History, Trash2, PanelRightClose, PanelRightOpen
 } from 'lucide-react';
 import { Tender, User } from '../types';
-import { mockNoaDataset } from './noaBidOptimizer';
+import { mockNoaDataset } from '../utils/noaData';
 import { sanitizeTenderRecord } from '../utils/sanitizeTender';
 
 const getShortMethod = (method?: string): string => {
@@ -1092,7 +1092,7 @@ export default function TenderExplorer({
                   }}
                   initial="hidden"
                   animate="show"
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start"
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-2.5 items-stretch"
                 >
                   {paginatedTenders.map((tender) => {
                     const isReTender = tender.isReTender;
@@ -1150,7 +1150,7 @@ export default function TenderExplorer({
                             showToast("Access Restricted: Please upgrade subscription inside 'CTO Specs Blueprint' tab -> payment simulation.", "error");
                           }
                         }}
-                        className="bg-white dark:bg-slate-900 hover:bg-slate-50/80 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 dark:hover:border-indigo-500/50 p-3.5 rounded-2xl transition-all duration-200 cursor-pointer flex flex-col justify-between group relative shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                        className="bg-white dark:bg-slate-900 hover:bg-slate-50/70 dark:hover:bg-slate-850 border-0 p-2.5 rounded-xl transition-all duration-200 cursor-pointer flex flex-col justify-between group relative shadow-sm hover:shadow-md hover:-translate-y-0.5 text-left"
                       >
                         <div className="space-y-2">
 
@@ -1451,9 +1451,9 @@ export default function TenderExplorer({
                               target="_blank"
                               rel="noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="w-full bg-[#dff0d8] hover:bg-[#d0e9c6] text-[#3c763d] font-black font-mono py-2.5 rounded-xl text-center flex items-center justify-center gap-2 transition-all cursor-pointer shadow-none active:scale-[0.99] select-none border border-[#d6e9c6] text-xs tracking-wider"
+                              className="w-full bg-white hover:bg-slate-50 text-slate-800 font-bold font-mono py-2.5 rounded-xl text-center flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow active:scale-[0.99] select-none border border-slate-200 text-xs tracking-wider"
                             >
-                              <ExternalLink className="w-3.5 h-3.5 text-[#3c763d] font-black" strokeWidth={2.5} />
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-600 font-black" strokeWidth={2.5} />
                               e-GP Notice
                             </a>
                           </div>
@@ -1845,9 +1845,9 @@ export default function TenderExplorer({
                       href={activeTender.tenderLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex-grow sm:flex-1 bg-[#dff0d8] hover:bg-[#d0e9c6] text-[#3c763d] py-3 rounded-xl font-bold font-mono text-xs text-center flex items-center justify-center gap-2 cursor-pointer transition-all border border-[#d6e9c6]"
+                      className="flex-grow sm:flex-1 bg-white hover:bg-slate-50 text-slate-800 py-3 rounded-xl font-bold font-mono text-xs text-center flex items-center justify-center gap-2 cursor-pointer transition-all border border-slate-200 shadow-sm active:scale-[0.99]"
                     >
-                      <ExternalLink className="w-4 h-4 text-[#3c763d]" strokeWidth={2.5} />
+                      <ExternalLink className="w-4 h-4 text-slate-600" strokeWidth={2.5} />
                       e-GP Notice
                     </a>
                   </div>

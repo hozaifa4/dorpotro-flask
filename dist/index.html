@@ -23,27 +23,35 @@
     <script>
       (function() {
         try {
-          var currentFetch = window.fetch || globalThis.fetch;
-          if (currentFetch) {
-            Object.defineProperty(window, 'fetch', {
-              get: function() { return currentFetch; },
-              set: function(v) { currentFetch = v; },
-              configurable: true,
-              enumerable: true
-            });
-            Object.defineProperty(globalThis, 'fetch', {
-              get: function() { return currentFetch; },
-              set: function(v) { currentFetch = v; },
-              configurable: true,
-              enumerable: true
-            });
-          }
+          var initialTenders = {{ initial_tenders_json | default('null') | safe }};
+          var nativeFetch = window.fetch || globalThis.fetch;
+          
+          var customFetch = function(url, options) {
+            if (initialTenders && typeof url === 'string' && url.indexOf('/api/tenders') !== -1) {
+              return Promise.resolve(new Response(JSON.stringify({
+                total: initialTenders.length,
+                tenders: initialTenders
+              }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+              }));
+            }
+            return nativeFetch.apply(this, arguments);
+          };
+
+          window.fetch = customFetch;
+          globalThis.fetch = customFetch;
         } catch (e) {
-          console.warn('Sandbox fetch setter override failed:', e);
+          console.warn('Initial tender injector notice:', e);
         }
       })();
     </script>
-    <script type="module" crossorigin src="/assets/index-su7BmYZv.js"></script>
+    <style>
+      button[title*="Watchlist"] {
+        display: none !important;
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-Uw7YIy0f.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-icons-DX_nn9bc.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-charts-ej_41Lsb.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-motion-g0aTdGad.js">
