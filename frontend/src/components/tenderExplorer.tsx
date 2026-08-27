@@ -13,14 +13,20 @@ import { Tender, User } from '../types';
 import { mockNoaDataset } from '../utils/noaData';
 import { sanitizeTenderRecord } from '../utils/sanitizeTender';
 
-const getShortMethod = (method?: string): string => {
-  if (!method) return 'OTM';
-  const upper = method.toUpperCase();
-  if (upper.includes('OPEN') || upper.includes('OTM')) return 'OTM';
-  if (upper.includes('LIMITED') || upper.includes('LTM')) return 'LTM';
-  if (upper.includes('QUOTATION') || upper.includes('RFQ')) return 'RFQ';
-  if (upper.includes('DIRECT') || upper.includes('DPM')) return 'DPM';
-  if (upper.length <= 4) return upper;
+const getShortMethod = (tenderOrMethod?: string | Partial<TenderRecord>): string => {
+  if (!tenderOrMethod) return 'OTM';
+  const tender = typeof tenderOrMethod === 'object' ? tenderOrMethod : null;
+  const method = typeof tenderOrMethod === 'string' ? tenderOrMethod : tender?.procurementMethod || '';
+  const text = `${tender?.packageNo || ''} ${tender?.invitationRefNo || ''} ${tender?.packageDescription || ''} ${method}`.toUpperCase();
+  
+  if (/\b(LTM|WLTM|GLTM|SLTM)\b|LTM-|-LTM|\/LTM|LIMITED/.test(text)) return 'LTM';
+  if (text.includes('RFQ') || text.includes('QUOTATION')) return 'RFQ';
+  if (text.includes('DPM') || text.includes('DIRECT')) return 'DPM';
+  if (text.includes('OSTETM')) return 'OSTETM';
+  if (text.includes('QCBS')) return 'QCBS';
+  if (text.includes('IC')) return 'IC';
+  if (text.includes('OPEN') || text.includes('OTM')) return 'OTM';
+  if (method.length <= 4) return method.toUpperCase();
   return 'OTM';
 };
 
@@ -777,7 +783,7 @@ export default function TenderExplorer({
     const matchesDistrict = districtFilter === 'ALL' || (t.district === districtFilter || t.procuringDistrict === districtFilter);
     const matchesOrg = orgFilter === 'ALL' || t.organization === orgFilter;
     const matchesPE = peFilter === 'ALL' || t.procuringEntity === peFilter;
-    const matchesMethod = methodFilter === 'ALL' || getShortMethod(t.procurementMethod) === methodFilter;
+    const matchesMethod = methodFilter === 'ALL' || getShortMethod(t) === methodFilter;
 
     return matchesSearch && matchesNature && matchesDistrict && matchesOrg && matchesPE && matchesMethod;
   });
@@ -791,7 +797,7 @@ export default function TenderExplorer({
   const districts = Array.from(new Set(activeTendersList.map(t => t.district || t.procuringDistrict))).filter(Boolean) as string[];
   const organizations = Array.from(new Set(activeTendersList.map(t => t.organization))).filter(Boolean) as string[];
   const procuringEntities = Array.from(new Set(activeTendersList.map(t => t.procuringEntity))).filter(Boolean) as string[];
-  const procurementMethods = Array.from(new Set(activeTendersList.map(t => getShortMethod(t.procurementMethod)))).filter(Boolean) as string[];
+  const procurementMethods = Array.from(new Set(['OTM', 'LTM', ...activeTendersList.map(t => getShortMethod(t))])).filter(Boolean) as string[];
 
   // Sub restriction status
   const userSub = currentUser?.subscriptionType || 'free';
@@ -1598,9 +1604,11 @@ export default function TenderExplorer({
                   </div>
                   <button
                     onClick={() => setSelectedTender(null)}
-                    className="text-slate-600 hover:text-black bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full border border-border-subtle transition-all text-xs cursor-pointer focus:outline-none flex items-center justify-center"
+                    title="Close Window"
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-600 hover:text-rose-700 border-2 border-rose-200 hover:border-rose-300 rounded-xl font-mono font-bold text-xs shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer focus:outline-none shrink-0"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4 text-rose-600 stroke-[2.5]" />
+                    <span className="hidden sm:inline">Close</span>
                   </button>
                 </div>
 
