@@ -1484,9 +1484,10 @@ export default function App() {
       )}
 
       {/* 4. Main Body Content Area */}
-      <main className={`flex-1 md:ml-0 pb-24 md:pb-12 px-3 sm:px-5 lg:px-6 max-w-[1720px] w-full mx-auto transition-all duration-300 ${
-        isAppOffline ? 'pt-24 sm:pt-28' : 'pt-16 sm:pt-20'
-      }`}>
+      <main 
+        style={{ paddingTop: isAppOffline ? '115px' : '88px' }}
+        className="flex-1 md:ml-0 pb-24 md:pb-12 px-3 sm:px-5 lg:px-6 max-w-[1720px] w-full mx-auto transition-all duration-300"
+      >
 
         {/* TAB 0: GOOGLE ACCOUNT SIGN-IN & CUSTOMIZED ALERTS */}
         {activeTab === 'signin' && (

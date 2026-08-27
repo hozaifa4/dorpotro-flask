@@ -825,8 +825,8 @@ export default function TenderExplorer({
       {/* Main content area */}
       <div className="space-y-6">
 
-        {/* Search Header toolbar (Sticky) */}
-        <div className="sticky top-14 sm:top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-3 shadow-sm transition-colors">
+        {/* Search Header toolbar */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-2xl space-y-3 shadow-sm transition-colors">
           <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
             <div className="relative flex-1 flex gap-2">
               <div className="relative flex-1">
@@ -836,8 +836,8 @@ export default function TenderExplorer({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Search by ID, keyword, ref or ministry..."
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none rounded-xl text-xs py-2 pl-9 pr-3 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-sans transition-colors h-9"
+                  placeholder="Search by Tender ID (e.g. 1314688), keyword, district, ministry..."
+                  className="w-full bg-white dark:bg-slate-950 border-2 border-indigo-200 dark:border-indigo-800/80 focus:border-indigo-600 dark:focus:border-indigo-400 outline-none rounded-xl text-xs py-2.5 pl-9 pr-3 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 font-sans font-medium transition-all shadow-xs h-10"
                 />
               </div>
               {searchTerm.trim() && (
@@ -1580,15 +1580,15 @@ export default function TenderExplorer({
         {selectedTender && (() => {
           const activeTender = sanitizeTenderRecord(selectedTender);
           return (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={() => { if (!showPdfPreview) setSelectedTender(null); }}>
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex justify-center items-center z-50 p-2 sm:p-4 overflow-hidden" onClick={() => { if (!showPdfPreview) setSelectedTender(null); }}>
               <div
                 id="tender-details-view"
-                className="bg-white border border-border-subtle rounded-xl w-full max-w-[95vw] lg:max-w-6xl xl:max-w-7xl max-h-[92vh] overflow-y-auto shadow-2xl animate-fade-in text-on-surface"
+                className="bg-white border border-border-subtle rounded-2xl w-full max-w-[96vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[92vh] sm:max-h-[90vh] shadow-2xl animate-fade-in text-on-surface flex flex-col overflow-hidden"
                 onClick={e => e.stopPropagation()}
               >
 
                 {/* Modal Header */}
-                <div className="bg-slate-50 px-6 py-4 border-b border-border-subtle flex justify-between items-center sticky top-0 z-10">
+                <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-border-subtle flex justify-between items-center shrink-0">
                   <div>
                     <span className="text-[11px] font-mono text-[#059669] font-bold block uppercase tracking-wider">eprocure.gov.bd Document Registry</span>
                     <h3 className="text-base font-display font-black text-primary flex items-center gap-2 mt-1 flex-wrap">
@@ -1604,8 +1604,8 @@ export default function TenderExplorer({
                   </button>
                 </div>
 
-                {/* Modal Contents */}
-                <div className="p-5 sm:p-6 space-y-5">
+                {/* Modal Contents (Scrollable Body) */}
+                <div className="p-3.5 sm:p-6 space-y-4 flex-1 overflow-y-auto overscroll-contain">
 
                   {/* Grid of full attributes directly from attached CSV */}
                   <div className="space-y-2">
@@ -1825,33 +1825,37 @@ export default function TenderExplorer({
 
                   {/* Action Buttons inside modals */}
                   <div className="flex flex-col sm:flex-row gap-3 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTender(null)}
-                      className="flex-grow sm:flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 rounded-xl font-bold font-mono text-xs cursor-pointer transition-colors border border-border-subtle"
-                    >
-                      RETURN TO DIRECTORY
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowPdfPreview(true)}
-                      className="flex-grow sm:flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 cursor-pointer transition-all border border-indigo-200 shadow-3xs"
-                    >
-                      <FileText className="w-4 h-4 text-indigo-500" />
-                      PREVIEW PDF NOTICE
-                    </button>
-                    <a
-                      href={activeTender.tenderLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-grow sm:flex-1 bg-white hover:bg-slate-50 text-slate-800 py-3 rounded-xl font-bold font-mono text-xs text-center flex items-center justify-center gap-2 cursor-pointer transition-all border border-slate-200 shadow-sm active:scale-[0.99]"
-                    >
-                      <ExternalLink className="w-4 h-4 text-slate-600" strokeWidth={2.5} />
-                      e-GP Notice
-                    </a>
                   </div>
 
+                </div>
+
+                {/* Modal Footer (Pinned at bottom) */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 sm:px-6 sm:py-3.5 bg-slate-50 border-t border-slate-200 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTender(null)}
+                    className="flex-grow sm:flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 py-2.5 sm:py-3 rounded-xl font-bold font-mono text-xs cursor-pointer transition-colors border border-border-subtle"
+                  >
+                    RETURN TO DIRECTORY
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPdfPreview(true)}
+                    className="flex-grow sm:flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-2.5 sm:py-3 rounded-xl font-bold font-mono text-xs flex items-center justify-center gap-2 cursor-pointer transition-all border border-indigo-200 shadow-3xs"
+                  >
+                    <FileText className="w-4 h-4 text-indigo-500" />
+                    PREVIEW PDF NOTICE
+                  </button>
+                  <a
+                    href={activeTender.tenderLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-grow sm:flex-1 bg-white hover:bg-slate-50 text-slate-800 py-2.5 sm:py-3 rounded-xl font-bold font-mono text-xs text-center flex items-center justify-center gap-2 cursor-pointer transition-all border border-slate-200 shadow-sm active:scale-[0.99]"
+                  >
+                    <ExternalLink className="w-4 h-4 text-slate-600" strokeWidth={2.5} />
+                    e-GP Notice
+                  </a>
                 </div>
 
               </div>

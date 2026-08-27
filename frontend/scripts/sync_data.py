@@ -177,8 +177,21 @@ def parse_tender_row(headers, row, row_num, file_date=""):
     doc_price = int(parse_num(doc_price_raw)) if doc_price_raw else 500
     if doc_price == 0: doc_price = 500
 
-    security_amt_raw = get_col('Tender/Proposal security(Amount in BDT)', 'Security Amount', 'Tender Security', 'Security')
-    security_amt = int(parse_num(security_amt_raw)) if security_amt_raw else 15000
+    security_amt_raw = get_col('Tender/Proposal security(Amount in BDT)', 'Tender/Proposal Security(Amount in BDT)', 'Security Amount', 'Tender Security', 'Security', 'Security (BDT)', 'Security(Amount in BDT)')
+    security_amt = int(parse_num(security_amt_raw)) if security_amt_raw else 0
+    if security_amt == 0:
+        if est_cost_amt > 0:
+            security_amt = int(est_cost_amt * 0.025) # Standard 2.5% e-GP security estimate
+        elif doc_price >= 5000:
+            security_amt = 500000
+        elif doc_price >= 2500:
+            security_amt = 250000
+        elif doc_price >= 2000:
+            security_amt = 150000
+        elif doc_price >= 1000:
+            security_amt = 50000
+        else:
+            security_amt = 20000
 
     est_cost_raw = get_col('Estimated Cost', 'Estimated Value', 'Cost', 'Budget', 'Value')
     est_cost_amt = parse_num(est_cost_raw)
