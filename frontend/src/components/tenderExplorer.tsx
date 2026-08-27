@@ -825,8 +825,8 @@ export default function TenderExplorer({
       {/* Main content area */}
       <div className="space-y-6">
 
-        {/* Search Header toolbar */}
-        <div className="bg-slate-50/80 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl space-y-3 shadow-sm transition-colors">
+        {/* Search Header toolbar (Sticky) */}
+        <div className="sticky top-14 sm:top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl space-y-2.5 sm:space-y-3 shadow-sm transition-colors">
           <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
             <div className="relative flex-1 flex gap-2">
               <div className="relative flex-1">
