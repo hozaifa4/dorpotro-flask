@@ -1026,9 +1026,9 @@ export default function TenderExplorer({
           return null;
         })()}
 
-        {/* Grid of Tenders (Paginated: 15 items per page) */}
+        {/* Grid of Tenders (Paginated: 16 items per page for 4-column grid fill) */}
         {(() => {
-          const ITEMS_PER_PAGE = 15;
+          const ITEMS_PER_PAGE = 16;
           const totalPages = Math.ceil(filterTenders.length / ITEMS_PER_PAGE) || 1;
           const activePage = Math.min(Math.max(1, currentPage), totalPages);
 
