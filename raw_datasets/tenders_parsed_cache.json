@@ -1,11 +1,9 @@
 {
-  "manifest": {
-    "Restricted_Data_27-Aug-2026_Dhaka.csv": 18690
-  },
+  "manifest": {},
   "total": 2618,
   "active_count": 756,
   "archived_count": 1862,
-  "last_updated": "28-Aug-2026 00:14:04",
+  "last_updated": "28-Aug-2026 00:20:11",
   "tenders": [
     {
       "id": "1314155",
