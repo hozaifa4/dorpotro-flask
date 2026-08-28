@@ -9,3 +9,14 @@ Dorpotro-Uploader/
 Dorpotro-Uploader.zip
 raw_datasets_backup/
 otmall_optimized.py
+
+# Heavy Data & Cache files (Hosted directly on Cloudflare R2 CDN)
+raw_datasets/
+frontend/raw_datasets/
+*.csv
+*.xlsx
+tenders_parsed_cache.json
+dist/tenders.json
+frontend/public/tenders.json
+dist_backup_golden/
+

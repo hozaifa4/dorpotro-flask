@@ -129,20 +129,36 @@ export default function App() {
   const [isLoadingTenders, setIsLoadingTenders] = useState(true);
 
   React.useEffect(() => {
-    const fetchFlaskTenders = async () => {
-      try {
-        const res = await fetch('/api/tenders?tab=all');
-        const data = await res.json();
-        if (data && data.tenders && Array.isArray(data.tenders)) {
-          setTenders(data.tenders.map(sanitizeTenderRecord));
+    const fetchLiveTenders = async () => {
+      const cdnUrl = (typeof window !== 'undefined' && (window as any).__DORPOTRO_CDN_URL__) || 
+                     'https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_parsed_cache.json';
+
+      const endpoints = [
+        cdnUrl,
+        '/api/tenders?tab=all',
+        '/dist/tenders.json',
+        '/tenders.json'
+      ];
+
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            const rawList = data.tenders || (Array.isArray(data) ? data : null);
+            if (rawList && Array.isArray(rawList)) {
+              setTenders(rawList.map(sanitizeTenderRecord));
+              setIsLoadingTenders(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn(`Tender fetch from ${url} failed, checking next fallback...`, err);
         }
-      } catch (err) {
-        console.warn('Failed to fetch from Flask backend', err);
-      } finally {
-        setIsLoadingTenders(false);
       }
+      setIsLoadingTenders(false);
     };
-    fetchFlaskTenders();
+    fetchLiveTenders();
   }, []);
 
   // Watchlist (starred / bookmarked tenders) state

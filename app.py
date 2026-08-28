@@ -28,12 +28,45 @@ def parse_dt(d_str):
         pass
     return datetime.min
 
+R2_CDN_URL = os.environ.get("DORPOTRO_CDN_URL", "https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_parsed_cache.json")
+_last_fetch_time = 0
+
 def load_live_tenders():
     """
-    raw_datasets/tenders_parsed_cache.json বা tenders_parsed_cache.json থেকে লাইভ ডেটা পড়ে।
+    Cloudflare R2 CDN অথবা লোকাল ক্যাশ থেকে লাইভ ডেটা পড়ে।
     Fast In-Memory Caching সহ অপ্টিমাইজড।
     """
-    global _cached_mtime, _cached_data
+    global _cached_mtime, _cached_data, _last_fetch_time
+    now = datetime.now()
+    
+    # 1. Return in-memory cache if less than 60 seconds old
+    if _cached_data.get("tenders") and (time.time() - _last_fetch_time < 60):
+        return _cached_data
+
+    # 2. Try fetching from Cloudflare R2 Edge CDN
+    import urllib.request
+    try:
+        req = urllib.request.Request(R2_CDN_URL, headers={"User-Agent": "Dorpotro-Flask-Backend"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                raw_data = json.loads(resp.read().decode('utf-8'))
+                tenders = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
+                if isinstance(tenders, list) and len(tenders) > 0:
+                    active_count = sum(1 for t in tenders if parse_dt(t.get('documentLastSellingDate', '')) >= now)
+                    archived_count = len(tenders) - active_count
+                    _last_fetch_time = time.time()
+                    _cached_data = {
+                        "total": len(tenders),
+                        "active_count": raw_data.get("active_count", active_count) if isinstance(raw_data, dict) else active_count,
+                        "archived_count": raw_data.get("archived_count", archived_count) if isinstance(raw_data, dict) else archived_count,
+                        "last_updated": raw_data.get("last_updated", now.strftime("%d-%b-%Y %H:%M:%S")) if isinstance(raw_data, dict) else now.strftime("%d-%b-%Y %H:%M:%S"),
+                        "tenders": tenders
+                    }
+                    return _cached_data
+    except Exception as e:
+        print(f"Cloudflare CDN fetch fallback notice: {e}")
+
+    # 3. Fallback to candidate local paths
     base_dir = os.path.dirname(os.path.abspath(__file__))
     candidate_paths = [
         os.path.join(base_dir, "raw_datasets", "tenders_parsed_cache.json"),
@@ -55,7 +88,6 @@ def load_live_tenders():
                 if not isinstance(tenders, list):
                     tenders = []
 
-                now = datetime.now()
                 active_count = sum(1 for t in tenders if parse_dt(t.get('documentLastSellingDate', '')) >= now)
                 archived_count = len(tenders) - active_count
 
