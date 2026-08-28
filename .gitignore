@@ -11,6 +11,8 @@ Dorpotro-Uploader/
 Dorpotro-Uploader.zip
 raw_datasets_backup/
 otmall_optimized.py
+eGP_Master_Scraper.py
+eGP_Master_Scraper*.py
 
 # Heavy Data & Cache files (Hosted directly on Cloudflare R2 CDN)
 raw_datasets/
