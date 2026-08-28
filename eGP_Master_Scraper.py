@@ -1470,8 +1470,8 @@ def run_dorpotro_sync(target_files=None):
         from botocore.config import Config
 
         r2_endpoint = os.environ.get("R2_ENDPOINT", "https://a7aacce0e488ef6b6ad8b2075c6ba4f1.r2.cloudflarestorage.com")
-        r2_access_key = os.environ.get("R2_ACCESS_KEY_ID", "5f5106e72f2464ae20f645004063b793")
-        r2_secret_key = os.environ.get("R2_SECRET_ACCESS_KEY", "3d4a13080557735b41e5f3f6147261a042aa8c4f5a1bae5b2ce65a997dcd84bd")
+        r2_access_key = os.environ.get("R2_ACCESS_KEY_ID", "f631a040987df3e56266004c67d69e6b")
+        r2_secret_key = os.environ.get("R2_SECRET_ACCESS_KEY", "8ab159aef35e138633b1c1660c84bebd06c98315ef96e77ae253de7fef73c2a2")
         r2_bucket = os.environ.get("R2_BUCKET", "dorpotro-data")
 
         if r2_access_key and r2_secret_key:
