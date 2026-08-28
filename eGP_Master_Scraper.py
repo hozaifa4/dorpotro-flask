@@ -639,18 +639,39 @@ def scrape_ltm_table(driver, worker_prefix, target_dates_set, earliest_dt, lates
                 raw_id = cols[1].get_text(separator='\n', strip=True).split('\n')[0]
                 tender_id = raw_id.replace(',', '').strip()
 
+                # Extract direct link from <a> tag if present in the table
+                a_tag = cols[1].find('a') or row.find('a')
+                detail_url = ""
+                if a_tag and a_tag.get('href'):
+                    raw_href = a_tag.get('href').strip()
+                    if "javascript:" not in raw_href:
+                        if raw_href.startswith('/'):
+                            detail_url = f"https://www.eprocure.gov.bd{raw_href}"
+                        elif raw_href.startswith('http'):
+                            detail_url = raw_href
+                        else:
+                            detail_url = f"https://www.eprocure.gov.bd/tenderer/{raw_href}"
+
+                if not detail_url:
+                    detail_url = f"https://www.eprocure.gov.bd/resources/common/ViewTender.jsp?id={tender_id}"
+
                 full_title = cols[2].get_text(separator=' ', strip=True)
-                nature = full_title.split(',', 1)[0].strip() if ',' in full_title else "Unknown"
+                nature = full_title.split(',', 1)[0].strip() if ',' in full_title else "Works"
                 title = full_title.split(',', 1)[1].strip() if ',' in full_title else full_title
 
-                detail_url = f"https://www.eprocure.gov.bd/resources/common/ViewTender.jsp?id={tender_id}"
-                if not any(d['Tender ID'] == tender_id for d in basic_data):
+                if not any(d.get('Tender ID') == tender_id for d in basic_data):
                     basic_data.append({
                         'Tender ID': tender_id,
+                        'Tender/Proposal ID': tender_id,
                         'Nature': nature,
+                        'Procurement Nature': nature,
                         'Title': title,
+                        'Brief Description of Works': title,
                         'Publish Date': current_date,
                         'Link': detail_url,
+                        'Tender Link': detail_url,
+                        'Event Type': 'LTM',
+                        'Procurement Method ': 'Limited Tendering Method (LTM)',
                         'Estimated Cost': 'Pending'
                     })
                     print(f"      ✅ [{worker_prefix}] Matched {current_date} | ID: {tender_id}")
@@ -834,19 +855,49 @@ def get_ltm_tender_details(driver, worker_prefix, basic_data_list):
     """Fetches full 48-field tender details for LTM items (100% Parity with OTM)."""
     print(f"   📥 [{worker_prefix}] Gathering Full Details for {len(basic_data_list)} tenders...")
     for idx, item in enumerate(basic_data_list, 1):
-        tender_id = item.get('Tender ID') or item.get('Tender/Proposal ID')
-        detail_url = item.get('Link') or item.get('Tender Link') or f"https://www.eprocure.gov.bd/resources/common/ViewTender.jsp?id={tender_id}"
-        item['Tender Link'] = detail_url
-        item['Link'] = detail_url
+        tender_id = str(item.get('Tender ID') or item.get('Tender/Proposal ID')).strip()
+        
+        # Guarantee LTM method & eventType
+        item['Event Type'] = "LTM"
+        item['Procurement Method '] = "Limited Tendering Method (LTM)"
+        item['Tender ID'] = tender_id
+        item['Tender/Proposal ID'] = tender_id
+
+        # Candidate detail URLs for LTM tenders
+        candidate_urls = []
+        if item.get('Link') and item['Link'].startswith('http'):
+            candidate_urls.append(item['Link'])
+        candidate_urls.extend([
+            f"https://www.eprocure.gov.bd/resources/common/ViewTender.jsp?id={tender_id}",
+            f"https://www.eprocure.gov.bd/tenderer/ViewTender.jsp?id={tender_id}",
+            f"https://www.eprocure.gov.bd/tenderer/ViewRestrictedTender.jsp?id={tender_id}"
+        ])
 
         print(f"   🔄 [{worker_prefix}] [{idx}/{len(basic_data_list)}] Scraping ID: {tender_id}...")
-        try:
-            driver.get(detail_url)
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "formStyle_1")))
-            dsoup = BeautifulSoup(driver.page_source, PARSER)
-            extract_all_tender_fields_from_soup(dsoup, item, is_ltm=True)
-        except Exception:
-            pass
+        details_extracted = False
+        for url in candidate_urls:
+            try:
+                item['Tender Link'] = url
+                item['Link'] = url
+                driver.get(url)
+                
+                WebDriverWait(driver, 8).until(
+                    lambda d: len(d.find_elements(By.TAG_NAME, "table")) > 0 or "formStyle_1" in d.page_source
+                )
+                time.sleep(0.8)
+                
+                dsoup = BeautifulSoup(driver.page_source, PARSER)
+                if dsoup.find('table') and any(k in dsoup.text for k in ["Ministry", "Organization", "Procuring", "Tender/Proposal", "Package"]):
+                    extract_all_tender_fields_from_soup(dsoup, item, is_ltm=True)
+                    details_extracted = True
+                    break
+            except Exception:
+                continue
+
+        if details_extracted:
+            print(f"      ✅ [{worker_prefix}] [{idx}/{len(basic_data_list)}] Details extracted for ID: {tender_id}")
+        else:
+            print(f"      ⚠️ [{worker_prefix}] [{idx}/{len(basic_data_list)}] Main table used for ID: {tender_id}")
 
     return basic_data_list
 
@@ -1344,7 +1395,17 @@ def run_dorpotro_sync(target_files=None):
                 row_count += 1
                 t = parse_tender_row(headers, r, row_count, file_date=file_date_key.replace('_', '-'), filename=fname)
                 if t and t["id"]:
-                    tenders_by_id[str(t["id"])] = t
+                    tid_str = str(t["id"])
+                    if tid_str in tenders_by_id:
+                        existing = tenders_by_id[tid_str]
+                        for k, v in t.items():
+                            if v and str(v).strip() not in ["Not Found", "Pending", "N/A", "nan", ""]:
+                                existing[k] = v
+                        tenders_by_id[tid_str] = existing
+                        t = existing
+                    else:
+                        tenders_by_id[tid_str] = t
+
                     file_tenders_count += 1
                     if file_date_key:
                         date_segregated_tenders[file_date_key].append(t)
@@ -1403,7 +1464,7 @@ def run_dorpotro_sync(target_files=None):
             date_json_paths[json_fname] = j_path
             print(f"  💾 Date-Specific JSON: {json_fname} ({len(d_items)} items)")
 
-    # ⚡ 1. Direct Cloudflare R2 Edge CDN Sync (Primary Fast Storage)
+    # ⚡ 1. Direct Cloudflare R2 Edge CDN Upload (Primary Fast Storage)
     try:
         import boto3
         from botocore.config import Config
@@ -1423,24 +1484,29 @@ def run_dorpotro_sync(target_files=None):
                 region_name='auto',
                 config=Config(signature_version='s3v4')
             )
-            s3_client.upload_file(
-                cache_path,
-                r2_bucket,
-                "tenders_parsed_cache.json",
-                ExtraArgs={'ContentType': 'application/json', 'CacheControl': 'public, max-age=60, s-maxage=300'}
+            with open(cache_path, 'rb') as f:
+                c_bytes = f.read()
+
+            s3_client.put_object(
+                Bucket=r2_bucket,
+                Key="tenders_parsed_cache.json",
+                Body=c_bytes,
+                ContentType='application/json',
+                CacheControl='public, max-age=60, s-maxage=300'
             )
-            s3_client.upload_file(
-                cache_path,
-                r2_bucket,
-                "tenders.json",
-                ExtraArgs={'ContentType': 'application/json', 'CacheControl': 'public, max-age=60, s-maxage=300'}
+            s3_client.put_object(
+                Bucket=r2_bucket,
+                Key="tenders.json",
+                Body=c_bytes,
+                ContentType='application/json',
+                CacheControl='public, max-age=60, s-maxage=300'
             )
-            print("🚀 [Cloudflare R2] Live tenders successfully synced to Cloudflare Edge in 1s!")
+            print(f"🚀 [Cloudflare R2] {len(unique_tenders)} tenders successfully synced to Cloudflare Edge in 1s!")
     except Exception as e:
         print(f"⚠️ Cloudflare R2 upload notice: {e}")
 
-    # 2. Local Git Status Notice (Zero heavy data commit to GitHub)
-    print("🧹 [Clean Git] Heavy database files are decoupled from GitHub repository.")
+    # 2. Status Notice
+    print("🧹 [Clean Architecture] Master database is hosted directly on Cloudflare Edge CDN.")
 
     print("=" * 65)
     print(f"🎉 Auto-Sync Complete! 🟢 {len(active_tenders)} Live Tenders Ready.")
