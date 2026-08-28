@@ -14,6 +14,9 @@ otmall_optimized.py
 eGP_Master_Scraper.py
 eGP_Master_Scraper*.py
 eGP_Master_Scraper_CDN.py
+eGP_Master_Scraper_CDN_Gzip.py
+*Gzip*.py
+
 
 # Heavy Data & Cache files (Hosted directly on Cloudflare R2 CDN)
 raw_datasets/
