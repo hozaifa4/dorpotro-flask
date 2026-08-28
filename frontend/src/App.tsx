@@ -130,17 +130,58 @@ export default function App() {
 
   React.useEffect(() => {
     const fetchLiveTenders = async () => {
-      const cdnUrl = (typeof window !== 'undefined' && (window as any).__DORPOTRO_CDN_URL__) || 
-                     'https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_parsed_cache.json';
+      const activeCdnUrl = (typeof window !== 'undefined' && (window as any).__DORPOTRO_ACTIVE_CDN__) || 
+                           'https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_active.json';
+      const archivedCdnUrl = (typeof window !== 'undefined' && (window as any).__DORPOTRO_ARCHIVED_CDN__) || 
+                             'https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_archived.json';
+      const masterCdnUrl = (typeof window !== 'undefined' && (window as any).__DORPOTRO_CDN_URL__) || 
+                           'https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_parsed_cache.json';
 
-      const endpoints = [
-        cdnUrl,
+      // 1. Fast Tier 1: Fetch only Active Tenders (416 KB payload) for instant initial render
+      try {
+        const res = await fetch(activeCdnUrl);
+        if (res.ok) {
+          const data = await res.json();
+          const activeList = data.tenders || (Array.isArray(data) ? data : null);
+          if (activeList && Array.isArray(activeList) && activeList.length > 0) {
+            setTenders(activeList.map(sanitizeTenderRecord));
+            setIsLoadingTenders(false);
+
+            // 2. Background Tier 2: Seamlessly stream Archived Tenders in the background
+            setTimeout(async () => {
+              try {
+                const arcRes = await fetch(archivedCdnUrl);
+                if (arcRes.ok) {
+                  const arcData = await arcRes.json();
+                  const arcList = arcData.tenders || (Array.isArray(arcData) ? arcData : null);
+                  if (arcList && Array.isArray(arcList) && arcList.length > 0) {
+                    setTenders(prev => {
+                      const existingIds = new Set(prev.map(t => String(t.id)));
+                      const freshArc = arcList.filter(t => !existingIds.has(String(t.id))).map(sanitizeTenderRecord);
+                      return [...prev, ...freshArc];
+                    });
+                  }
+                }
+              } catch (e) {
+                console.warn('Background archived fetch notice:', e);
+              }
+            }, 800);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Fast active CDN fetch failed, falling back to master CDN...', err);
+      }
+
+      // 3. Fallback: Master Full Dataset
+      const fallbackUrls = [
+        masterCdnUrl,
         '/api/tenders?tab=all',
         '/dist/tenders.json',
         '/tenders.json'
       ];
 
-      for (const url of endpoints) {
+      for (const url of fallbackUrls) {
         try {
           const res = await fetch(url);
           if (res.ok) {
