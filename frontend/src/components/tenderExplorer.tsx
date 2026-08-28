@@ -993,7 +993,7 @@ export default function TenderExplorer({
                 }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${deadlineFilter === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
-              Active ({totalActiveCount})
+              Live ({totalActiveCount})
             </button>
             <button
               onClick={() => setDeadlineFilter('archived')}
