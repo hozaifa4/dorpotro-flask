@@ -766,27 +766,56 @@ export default function TenderExplorer({
     setCurrentPage(1);
   }, [searchTerm, natureFilter, districtFilter, orgFilter, peFilter, methodFilter, deadlineFilter]);
 
+  // Escape key to close open modals
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showPdfPreview) {
+          setShowPdfPreview(false);
+        } else if (selectedTender) {
+          setSelectedTender(null);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedTender, showPdfPreview]);
+
+  // Lock background body scroll when modal is open
+  React.useEffect(() => {
+    if (selectedTender || showPdfPreview) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedTender, showPdfPreview]);
+
   // Resolve active dataset (always the default/local dataset)
   const activeTendersList = tenders;
 
-  // Compute base filtered list applying all filters EXCEPT the deadline/status filter itself
-  const baseFilteredList = activeTendersList.filter(t => {
-    const matchesSearch =
-      t.id.includes(searchTerm) ||
-      t.packageNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.packageDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.procuringEntity && t.procuringEntity.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      t.officialInviter.toLowerCase().includes(searchTerm.toLowerCase());
+  // Compute base filtered list applying all filters EXCEPT the deadline/status filter itself (Memoized)
+  const baseFilteredList = React.useMemo(() => {
+    return activeTendersList.filter(t => {
+      const matchesSearch =
+        t.id.includes(searchTerm) ||
+        t.packageNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.packageDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (t.procuringEntity && t.procuringEntity.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        t.officialInviter.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesNature = natureFilter === 'ALL' || t.procurementNature === natureFilter;
-    const matchesDistrict = districtFilter === 'ALL' || (t.district === districtFilter || t.procuringDistrict === districtFilter);
-    const matchesOrg = orgFilter === 'ALL' || t.organization === orgFilter;
-    const matchesPE = peFilter === 'ALL' || t.procuringEntity === peFilter;
-    const matchesMethod = methodFilter === 'ALL' || getShortMethod(t) === methodFilter;
+      const matchesNature = natureFilter === 'ALL' || t.procurementNature === natureFilter;
+      const matchesDistrict = districtFilter === 'ALL' || (t.district === districtFilter || t.procuringDistrict === districtFilter);
+      const matchesOrg = orgFilter === 'ALL' || t.organization === orgFilter;
+      const matchesPE = peFilter === 'ALL' || t.procuringEntity === peFilter;
+      const matchesMethod = methodFilter === 'ALL' || getShortMethod(t) === methodFilter;
 
-    return matchesSearch && matchesNature && matchesDistrict && matchesOrg && matchesPE && matchesMethod;
-  });
+      return matchesSearch && matchesNature && matchesDistrict && matchesOrg && matchesPE && matchesMethod;
+    });
+  }, [activeTendersList, searchTerm, natureFilter, districtFilter, orgFilter, peFilter, methodFilter]);
 
   // Active vs Archived counts computed dynamically using the filtered results (excluding deadlineFilter itself)
   const totalActiveCount = baseFilteredList.filter(t => !isTenderArchived(t)).length;
@@ -834,29 +863,20 @@ export default function TenderExplorer({
         {/* Search Header toolbar */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-2xl space-y-3 shadow-sm transition-colors">
           <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
-            <div className="relative flex-1 flex gap-2">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  placeholder="Search by Tender ID (e.g. 1314688), keyword, district, ministry..."
-                  className="w-full bg-white dark:bg-slate-950 border-2 border-indigo-200 dark:border-indigo-800/80 focus:border-indigo-600 dark:focus:border-indigo-400 outline-none rounded-xl text-xs py-2.5 pl-9 pr-3 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 font-sans font-medium transition-all shadow-xs h-10"
-                />
-              </div>
-              {searchTerm.trim() && (
-                <button
-                  type="button"
-                  onClick={() => handleSaveSearch(searchTerm)}
-                  title="Save current query"
-                  className="px-3 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors shrink-0 h-9 select-none"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Save
-                </button>
-              )}
+            <div className="relative flex-1" style={{ position: 'relative', width: '100%' }}>
+              <Search
+                className="w-4 h-4 text-slate-400 dark:text-slate-500"
+                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 2 }}
+              />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Search by Tender ID (e.g. 1314688), keyword, district, ministry..."
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 font-sans font-medium transition-all shadow-2xs"
+                style={{ paddingLeft: '36px', paddingRight: '12px', height: '40px', width: '100%' }}
+              />
             </div>
 
             <div className="flex items-center gap-2 shrink-0">

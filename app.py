@@ -84,8 +84,8 @@ def index():
     
     return render_template(
         "index.html", 
-        initial_tenders_json=json.dumps(tenders, ensure_ascii=False),
-        tenders=tenders, 
+        initial_tenders_json="null",
+        tenders=[], 
         active_count=data.get("active_count", 0),
         archived_count=data.get("archived_count", 0),
         last_updated=data.get("last_updated", ""),
