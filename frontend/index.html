@@ -38,17 +38,22 @@
       })(window, document, "clarity", "script", "ya1kwjduvs");
     </script>
 
-    <!-- ⚡ Vercel Web Analytics -->
+    <!-- ⚡ Vercel Web Analytics & Speed Insights -->
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/insights/script.js"></script>
+      try {
+        var vaScript = document.createElement('script');
+        vaScript.src = '/_vercel/insights/script.js';
+        vaScript.defer = true;
+        document.head.appendChild(vaScript);
 
-    <!-- 🚀 Vercel Speed Insights (Core Web Vitals & Real Experience Score) -->
-    <script>
-      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+        var siScript = document.createElement('script');
+        siScript.src = '/_vercel/speed-insights/script.js';
+        siScript.defer = true;
+        document.head.appendChild(siScript);
+      } catch (e) {}
     </script>
-    <script defer src="/_vercel/speed-insights/script.js"></script>
 
     <script>
       (function() {

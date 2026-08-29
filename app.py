@@ -32,6 +32,34 @@ def parse_dt(d_str):
 R2_CDN_URL = os.environ.get("DORPOTRO_CDN_URL", "https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_parsed_cache.json")
 _last_fetch_time = 0
 
+def clean_tender_display_description(t):
+    if not isinstance(t, dict):
+        return t
+    desc = str(t.get('packageDescription') or t.get('briefDescription') or '').strip()
+    if not desc:
+        return t
+
+    d = desc
+    # Pattern 1: Slash-separated or dash-separated package codes (e.g. KPWD/APP/26-27/029 or FGH/stationary/2026-27/G-13)
+    cleaned = re.sub(r'^(?:e\s*[-–]\s*)?[A-Za-z0-9_.\-/#()]+(?:/[A-Za-z0-9_.\-/#()]+)+(?:\s+Lot[-_\s]*\d+)?\s+', '', d, flags=re.IGNORECASE)
+    if cleaned != d and len(cleaned) > 5:
+        d = cleaned.lstrip('\"\' -:;,.')
+    else:
+        # Pattern 2: Short prefix (e.g. PR/WTD26 or E-TENDER/...)
+        cleaned2 = re.sub(r'^(?:e\s*[-–]\s*)?[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-/]+\s+', '', d, flags=re.IGNORECASE)
+        if cleaned2 != d and len(cleaned2) > 5:
+            d = cleaned2.lstrip('\"\' -:;,.')
+        else:
+            # Pattern 3: Common standard tender starting keywords
+            m = re.search(r'\b(Procurement|Supply|Installation|Construction|Repair|Periodic|Event|Hiring|Providing|Engagement|Renovation|Maintenance|Reconstruction|Upgradation|Consultancy|Work|Works|Civil|Supply of|Procurement of|Carrying|Printing|Purchasing|Preparation|Establishment)\b', d, re.IGNORECASE)
+            if m and 3 < m.start() < 90:
+                d = d[m.start():].strip()
+
+    d = d.strip('\"\'')
+    if d:
+        t['packageDescription'] = d
+    return t
+
 def load_live_tenders():
     """
     Cloudflare R2 CDN অথবা লোকাল ক্যাশ থেকে লাইভ ডেটা পড়ে।
@@ -53,6 +81,7 @@ def load_live_tenders():
                 raw_data = json.loads(resp.read().decode('utf-8'))
                 tenders = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
                 if isinstance(tenders, list) and len(tenders) > 0:
+                    tenders = [clean_tender_display_description(t) for t in tenders]
                     active_count = sum(1 for t in tenders if parse_dt(t.get('documentLastSellingDate', '')) >= now)
                     archived_count = len(tenders) - active_count
                     _last_fetch_time = time.time()
@@ -88,6 +117,8 @@ def load_live_tenders():
                 tenders = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
                 if not isinstance(tenders, list):
                     tenders = []
+                else:
+                    tenders = [clean_tender_display_description(t) for t in tenders]
 
                 active_count = sum(1 for t in tenders if parse_dt(t.get('documentLastSellingDate', '')) >= now)
                 archived_count = len(tenders) - active_count

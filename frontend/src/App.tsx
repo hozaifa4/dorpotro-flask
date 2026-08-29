@@ -1498,6 +1498,7 @@ export default function App() {
             })}
           </nav>
         </div>
+      </header>
 
       {/* 3. Mobile Navigation Drawer menu (Active on toggle) */}
       {mobileMenuOpen && (
@@ -3211,6 +3212,9 @@ export default function App() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
       {/* 🟢 Floating WhatsApp Contact Button (Dismissible with cross icon) */}
       {showWhatsApp && (
         <div

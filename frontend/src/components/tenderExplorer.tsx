@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Tender, User } from '../types';
 import { mockNoaDataset } from '../utils/noaData';
-import { sanitizeTenderRecord } from '../utils/sanitizeTender';
+import { sanitizeTenderRecord, getCleanTenderDescription } from '../utils/sanitizeTender';
 
 const getShortMethod = (tenderOrMethod?: string | Partial<TenderRecord>): string => {
   if (!tenderOrMethod) return 'OTM';
@@ -1286,13 +1286,13 @@ export default function TenderExplorer({
                           <div className="space-y-1.5">
                             <h3
                               className={`text-[11.5px] font-sans font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 leading-snug transition-colors cursor-pointer ${expandedTitleIds[tender.id] ? '' : 'line-clamp-2'}`}
-                              title={tender.packageDescription || tender.briefDescription}
+                              title={getCleanTenderDescription(tender.packageDescription, tender.packageNo, tender.briefDescription)}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setExpandedTitleIds(prev => ({ ...prev, [tender.id]: !prev[tender.id] }));
                               }}
                             >
-                              {tender.packageDescription || tender.briefDescription}
+                              {getCleanTenderDescription(tender.packageDescription, tender.packageNo, tender.briefDescription)}
                             </h3>
                             <div className="flex justify-between items-center mt-1">
                               {(() => {
