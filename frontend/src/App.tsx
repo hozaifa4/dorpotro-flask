@@ -3210,30 +3210,31 @@ export default function App() {
               </button>
             </div>
           ))}
-      {/* 🟢 Floating WhatsApp Contact Button (Option 1: Bottom Right) */}
+      {/* 🟢 Floating WhatsApp Contact Button (User SVG at Bottom Right) */}
       <a
         href="https://wa.me/8801521781067?text=Hello%20Dorpotro,%20I%20have%20an%20inquiry%20regarding%20tender%20information."
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat with us on WhatsApp"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white px-3.5 py-2.5 rounded-full shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 group cursor-pointer"
-        style={{ textDecoration: 'none' }}
+        className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-white/95 dark:bg-slate-900/95 hover:bg-white rounded-full shadow-2xl hover:shadow-emerald-500/30 border border-slate-200/80 dark:border-slate-700/80 hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
+        style={{ textDecoration: 'none', zIndex: 99999 }}
       >
-        <span className="relative flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900"></span>
         </span>
         <svg
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          fill="currentColor"
-          className="transition-transform group-hover:rotate-12"
+          width="38"
+          height="38"
+          viewBox="0 0 48 48"
+          className="transition-transform group-hover:rotate-12 duration-300"
         >
-          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.067-1.108-.066-.35-.113-.799-.277-1.391-.532-2.502-1.077-4.137-3.606-4.262-3.771-.126-.166-1.018-1.354-1.018-2.582 0-1.229.645-1.835.874-2.084.23-.249.5-.312.667-.312.166 0 .333.003.479.01.156.008.365-.059.57.433.21.503.717 1.748.78 1.873.062.126.104.272.02.437-.083.166-.125.27-.249.416-.125.146-.262.326-.375.437-.125.125-.256.26-.11.511.146.251.648 1.07 1.391 1.732.955.851 1.76 1.115 2.01 1.24.25.125.396.104.542-.063.146-.167.625-.729.791-.979.166-.25.333-.208.562-.125.229.083 1.458.687 1.708.812.25.125.416.187.479.291.062.104.062.604-.082 1.009z" />
-          <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.98-1.397A9.953 9.953 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.167c-1.697 0-3.277-.492-4.61-1.339l-.33-.208-2.955.828.84-2.883-.227-.361A8.127 8.127 0 013.833 12c0-4.504 3.663-8.167 8.167-8.167 4.504 0 8.167 3.663 8.167 8.167 0 4.504-3.663 8.167-8.167 8.167z" />
+          <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
+            <g transform="translate(-700.000000, -360.000000)" fill="#25D366">
+              <path d="M723.993033,360 C710.762252,360 700,370.765287 700,383.999801 C700,389.248451 701.692661,394.116025 704.570026,398.066947 L701.579605,406.983798 L710.804449,404.035539 C714.598605,406.546975 719.126434,408 724.006967,408 C737.237748,408 748,397.234315 748,384.000199 C748,370.765685 737.237748,360.000398 724.006967,360.000398 L723.993033,360.000398 L723.993033,360 Z M717.29285,372.190836 C716.827488,371.07628 716.474784,371.034071 715.769774,371.005401 C715.529728,370.991464 715.262214,370.977527 714.96564,370.977527 C714.04845,370.977527 713.089462,371.245514 712.511043,371.838033 C711.806033,372.557577 710.056843,374.23638 710.056843,377.679202 C710.056843,381.122023 712.567571,384.451756 712.905944,384.917648 C713.258648,385.382743 717.800808,392.55031 724.853297,395.471492 C730.368379,397.757149 732.00491,397.545307 733.260074,397.27732 C735.093658,396.882308 737.393002,395.527239 737.971421,393.891043 C738.54984,392.25405 738.54984,390.857171 738.380255,390.560912 C738.211068,390.264652 737.745308,390.095816 737.040298,389.742615 C736.335288,389.389811 732.90737,387.696673 732.25849,387.470894 C731.623543,387.231179 731.017259,387.315995 730.537963,387.99333 C729.860819,388.938653 729.198006,389.89831 728.661785,390.476494 C728.238619,390.928051 727.547144,390.984595 726.969123,390.744481 C726.193254,390.420348 724.021298,389.657798 721.340985,387.273388 C719.267356,385.42535 717.856938,383.125756 717.448104,382.434484 C717.038871,381.729275 717.405907,381.319529 717.729948,380.938852 C718.082653,380.501232 718.421026,380.191036 718.77373,379.781688 C719.126434,379.372738 719.323884,379.160897 719.549599,378.681068 C719.789645,378.215575 719.62006,377.735746 719.450874,377.382942 C719.281687,377.030139 717.871269,373.587317 717.29285,372.190836 Z" />
+            </g>
+          </g>
         </svg>
-        <span className="font-bold text-xs tracking-wide pr-1 hidden sm:inline-block">WhatsApp</span>
       </a>
 
     </div>
