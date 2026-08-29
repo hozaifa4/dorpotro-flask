@@ -1,7 +1,7 @@
 // DORPOTRO.BD Offline Service Worker
 // Provides high-reliability SPA static asset shell caching 
 
-const CACHE_NAME = 'dorpotro-static-v6';
+const CACHE_NAME = 'dorpotro-static-v7';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
