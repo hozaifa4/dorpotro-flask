@@ -123,6 +123,7 @@ export default function App() {
   }, [isDarkMode]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [toasts, setToasts] = useState<{ id: string; message: string; type: 'success' | 'error' | 'info' }[]>([]);
+  const [showWhatsApp, setShowWhatsApp] = useState<boolean>(true);
 
   // Ground database of tenders fetched from Flask API backend
   const [tenders, setTenders] = useState<Tender[]>([]);
@@ -3210,32 +3211,52 @@ export default function App() {
               </button>
             </div>
           ))}
-      {/* 🟢 Floating WhatsApp Contact Button (User SVG at Bottom Right) */}
-      <a
-        href="https://wa.me/8801521781067?text=Hello%20Dorpotro,%20I%20have%20an%20inquiry%20regarding%20tender%20information."
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Chat with us on WhatsApp"
-        className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-white/95 dark:bg-slate-900/95 hover:bg-white rounded-full shadow-2xl hover:shadow-emerald-500/30 border border-slate-200/80 dark:border-slate-700/80 hover:scale-110 active:scale-95 transition-all duration-300 group cursor-pointer"
-        style={{ textDecoration: 'none', zIndex: 99999 }}
-      >
-        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900"></span>
-        </span>
-        <svg
-          width="38"
-          height="38"
-          viewBox="0 0 48 48"
-          className="transition-transform group-hover:rotate-12 duration-300"
+      {/* 🟢 Floating WhatsApp Contact Button (Dismissible with cross icon) */}
+      {showWhatsApp && (
+        <div
+          style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 999999 }}
+          className="fixed bottom-6 right-6 z-50 flex items-center justify-center group"
         >
-          <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-            <g transform="translate(-700.000000, -360.000000)" fill="#25D366">
-              <path d="M723.993033,360 C710.762252,360 700,370.765287 700,383.999801 C700,389.248451 701.692661,394.116025 704.570026,398.066947 L701.579605,406.983798 L710.804449,404.035539 C714.598605,406.546975 719.126434,408 724.006967,408 C737.237748,408 748,397.234315 748,384.000199 C748,370.765685 737.237748,360.000398 724.006967,360.000398 L723.993033,360.000398 L723.993033,360 Z M717.29285,372.190836 C716.827488,371.07628 716.474784,371.034071 715.769774,371.005401 C715.529728,370.991464 715.262214,370.977527 714.96564,370.977527 C714.04845,370.977527 713.089462,371.245514 712.511043,371.838033 C711.806033,372.557577 710.056843,374.23638 710.056843,377.679202 C710.056843,381.122023 712.567571,384.451756 712.905944,384.917648 C713.258648,385.382743 717.800808,392.55031 724.853297,395.471492 C730.368379,397.757149 732.00491,397.545307 733.260074,397.27732 C735.093658,396.882308 737.393002,395.527239 737.971421,393.891043 C738.54984,392.25405 738.54984,390.857171 738.380255,390.560912 C738.211068,390.264652 737.745308,390.095816 737.040298,389.742615 C736.335288,389.389811 732.90737,387.696673 732.25849,387.470894 C731.623543,387.231179 731.017259,387.315995 730.537963,387.99333 C729.860819,388.938653 729.198006,389.89831 728.661785,390.476494 C728.238619,390.928051 727.547144,390.984595 726.969123,390.744481 C726.193254,390.420348 724.021298,389.657798 721.340985,387.273388 C719.267356,385.42535 717.856938,383.125756 717.448104,382.434484 C717.038871,381.729275 717.405907,381.319529 717.729948,380.938852 C718.082653,380.501232 718.421026,380.191036 718.77373,379.781688 C719.126434,379.372738 719.323884,379.160897 719.549599,378.681068 C719.789645,378.215575 719.62006,377.735746 719.450874,377.382942 C719.281687,377.030139 717.871269,373.587317 717.29285,372.190836 Z" />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowWhatsApp(false);
+            }}
+            title="Close WhatsApp button"
+            style={{ position: 'absolute', top: '-6px', left: '-6px', zIndex: 1000000 }}
+            className="bg-slate-800 hover:bg-slate-950 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-lg cursor-pointer border border-slate-600/80 hover:scale-110 active:scale-95 transition-all"
+          >
+            ✕
+          </button>
+          <a
+            href="https://wa.me/8801550004510?text=Hello%20Dorpotro,%20I%20have%20an%20inquiry%20regarding%20tender%20information."
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Chat with us on WhatsApp"
+            className="flex items-center justify-center w-14 h-14 bg-white/95 dark:bg-slate-900/95 hover:bg-white rounded-full shadow-2xl hover:shadow-emerald-500/40 border border-slate-200/80 dark:border-slate-700/80 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
+            style={{ textDecoration: 'none' }}
+          >
+            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900"></span>
+            </span>
+            <svg
+              width="38"
+              height="38"
+              viewBox="0 0 48 48"
+              className="transition-transform group-hover:rotate-12 duration-300"
+            >
+              <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
+                <g transform="translate(-700.000000, -360.000000)" fill="#25D366">
+                  <path d="M723.993033,360 C710.762252,360 700,370.765287 700,383.999801 C700,389.248451 701.692661,394.116025 704.570026,398.066947 L701.579605,406.983798 L710.804449,404.035539 C714.598605,406.546975 719.126434,408 724.006967,408 C737.237748,408 748,397.234315 748,384.000199 C748,370.765685 737.237748,360.000398 724.006967,360.000398 L723.993033,360.000398 L723.993033,360 Z M717.29285,372.190836 C716.827488,371.07628 716.474784,371.034071 715.769774,371.005401 C715.529728,370.991464 715.262214,370.977527 714.96564,370.977527 C714.04845,370.977527 713.089462,371.245514 712.511043,371.838033 C711.806033,372.557577 710.056843,374.23638 710.056843,377.679202 C710.056843,381.122023 712.567571,384.451756 712.905944,384.917648 C713.258648,385.382743 717.800808,392.55031 724.853297,395.471492 C730.368379,397.757149 732.00491,397.545307 733.260074,397.27732 C735.093658,396.882308 737.393002,395.527239 737.971421,393.891043 C738.54984,392.25405 738.54984,390.857171 738.380255,390.560912 C738.211068,390.264652 737.745308,390.095816 737.040298,389.742615 C736.335288,389.389811 732.90737,387.696673 732.25849,387.470894 C731.623543,387.231179 731.017259,387.315995 730.537963,387.99333 C729.860819,388.938653 729.198006,389.89831 728.661785,390.476494 C728.238619,390.928051 727.547144,390.984595 726.969123,390.744481 C726.193254,390.420348 724.021298,389.657798 721.340985,387.273388 C719.267356,385.42535 717.856938,383.125756 717.448104,382.434484 C717.038871,381.729275 717.405907,381.319529 717.729948,380.938852 C718.082653,380.501232 718.421026,380.191036 718.77373,379.781688 C719.126434,379.372738 719.323884,379.160897 719.549599,378.681068 C719.789645,378.215575 719.62006,377.735746 719.450874,377.382942 C719.281687,377.030139 717.871269,373.587317 717.29285,372.190836 Z" />
+              </g>
             </g>
-          </g>
-        </svg>
-      </a>
+          </svg>
+        </a>
+      </div>
+      )}
 
     </div>
     </AppErrorBoundary>
