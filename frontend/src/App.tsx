@@ -3210,8 +3210,31 @@ export default function App() {
               </button>
             </div>
           ))}
-        </div>
-      )}
+      {/* 🟢 Floating WhatsApp Contact Button (Option 1: Bottom Right) */}
+      <a
+        href="https://wa.me/8801521781067?text=Hello%20Dorpotro,%20I%20have%20an%20inquiry%20regarding%20tender%20information."
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Chat with us on WhatsApp"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white px-3.5 py-2.5 rounded-full shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 group cursor-pointer"
+        style={{ textDecoration: 'none' }}
+      >
+        <span className="relative flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          fill="currentColor"
+          className="transition-transform group-hover:rotate-12"
+        >
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.067-1.108-.066-.35-.113-.799-.277-1.391-.532-2.502-1.077-4.137-3.606-4.262-3.771-.126-.166-1.018-1.354-1.018-2.582 0-1.229.645-1.835.874-2.084.23-.249.5-.312.667-.312.166 0 .333.003.479.01.156.008.365-.059.57.433.21.503.717 1.748.78 1.873.062.126.104.272.02.437-.083.166-.125.27-.249.416-.125.146-.262.326-.375.437-.125.125-.256.26-.11.511.146.251.648 1.07 1.391 1.732.955.851 1.76 1.115 2.01 1.24.25.125.396.104.542-.063.146-.167.625-.729.791-.979.166-.25.333-.208.562-.125.229.083 1.458.687 1.708.812.25.125.416.187.479.291.062.104.062.604-.082 1.009z" />
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.98-1.397A9.953 9.953 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.167c-1.697 0-3.277-.492-4.61-1.339l-.33-.208-2.955.828.84-2.883-.227-.361A8.127 8.127 0 013.833 12c0-4.504 3.663-8.167 8.167-8.167 4.504 0 8.167 3.663 8.167 8.167 0 4.504-3.663 8.167-8.167 8.167z" />
+        </svg>
+        <span className="font-bold text-xs tracking-wide pr-1 hidden sm:inline-block">WhatsApp</span>
+      </a>
 
     </div>
     </AppErrorBoundary>
