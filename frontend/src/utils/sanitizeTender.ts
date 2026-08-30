@@ -135,15 +135,28 @@ export function sanitizeTenderRecord(raw: any): Tender {
  * so that the UI tender card displays ONLY the clean work/goods/service Description.
  */
 export function getCleanTenderDescription(packageDesc?: string, packageNo?: string, briefDesc?: string): string {
-  const rawDesc = String(packageDesc || briefDesc || '').trim();
+  // If briefDesc is clean and already separate from package code, use it
+  if (briefDesc && briefDesc.trim().length > 5 && !briefDesc.trim().match(/^[A-Za-z0-9_.\-/#()]+\/[A-Za-z0-9_.\-/#()]+/)) {
+    return briefDesc.trim();
+  }
+
+  let rawDesc = String(packageDesc || briefDesc || '').trim();
   if (!rawDesc) return 'N/A';
 
+  // Strip exact packageNo prefix if present
+  if (packageNo && packageNo.trim()) {
+    const pTrim = packageNo.trim();
+    if (rawDesc.startsWith(pTrim)) {
+      rawDesc = rawDesc.substring(pTrim.length).trim();
+    }
+  }
+
   let cleaned = rawDesc
-    .replace(/^(?:e\s*[-–]\s*)?[A-Za-z0-9_.\-/#()]+(?:\/[A-Za-z0-9_.\-/#()]+)+(?:\s+Lot[-_\s]*\d+)?\s+/i, '')
+    .replace(/^(?:e\s*[-–]\s*)?[A-Za-z0-9_.\-/#()]*(?:\/[A-Za-z0-9_.\-/#()]+)+(?:\s+Lot[-_\s]*\d+)?\s+/i, '')
     .replace(/^(?:e\s*[-–]\s*)?[A-Za-z0-9_.\-]+(?:\/[A-Za-z0-9_.\-/]+)+\s+/i, '');
 
-  const mWord = cleaned.match(/\b(Procurement|Supply|Installation|Construction|Repair|Periodic|Event|Hiring|Providing|Engagement|Renovation|Maintenance|Reconstruction|Upgradation|Consultancy|Work|Works|Civil|Carrying|Printing|Purchasing|Preparation|Establishment)\b/i);
-  if (mWord && mWord.index !== undefined && mWord.index > 3 && mWord.index < 90) {
+  const mWord = cleaned.match(/\b(The|Estimate|Procurement|Supply|Installation|Construction|Repair|Periodic|Event|Hiring|Providing|Engagement|Renovation|Maintenance|Reconstruction|Upgradation|Consultancy|Work|Works|Civil|Carrying|Printing|Purchasing|Preparation|Establishment)\b/i);
+  if (mWord && mWord.index !== undefined && mWord.index >= 0 && mWord.index < 90) {
     cleaned = cleaned.substring(mWord.index).trim();
   }
 

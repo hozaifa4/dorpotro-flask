@@ -7,7 +7,7 @@ interface DorpotroLogoProps {
 
 export default function DorpotroLogo({ className = '', size = 32 }: DorpotroLogoProps) {
   return (
-    <div className={`flex items-center gap-2.5 select-none ${className}`}>
+    <div className={`flex items-center gap-2.5 select-none cursor-pointer ${className}`}>
       <div 
         className="relative flex items-center justify-center shrink-0"
         style={{ width: size, height: size }}

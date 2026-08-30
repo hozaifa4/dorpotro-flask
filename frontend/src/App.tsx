@@ -1451,7 +1451,19 @@ export default function App() {
           >
             <Menu className={`w-5 h-5 ${isDarkMode ? 'text-emerald-400' : 'text-slate-900'}`} />
           </button>
-          <DorpotroLogo />
+          <a 
+            href="/" 
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab('tenders');
+              setMobileMenuOpen(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all no-underline block"
+            title="Dorpotro.bd - Go to Home"
+          >
+            <DorpotroLogo />
+          </a>
 
           {/* Top Horizontal Navigation Bar */}
           <nav className="hidden md:flex items-center gap-2 ml-4">
