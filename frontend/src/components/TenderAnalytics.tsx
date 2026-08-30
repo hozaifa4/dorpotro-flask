@@ -39,10 +39,16 @@ interface TenderAnalyticsProps {
 }
 
 export default function TenderAnalytics({ tenders }: TenderAnalyticsProps) {
+  const [isReady, setIsReady] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState<string>('ALL');
   const [natureFilter, setNatureFilter] = useState<string>('ALL');
   const [metricType, setMetricType] = useState<'budget' | 'count'>('budget');
   const [searchTerm, setSearchTerm] = useState<string>('');
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsReady(true), 30);
+    return () => clearTimeout(timer);
+  }, []);
 
   // 1. Get unique list of districts for filtering
   const districts = useMemo(() => {
@@ -398,6 +404,18 @@ export default function TenderAnalytics({ tenders }: TenderAnalyticsProps) {
 
   // Color selection for BarChart cells
   const barColors = ['#6366F1', '#4F46E5', '#4338CA', '#3730A3', '#312E81', '#1e1b4b', '#1e293b', '#334155'];
+
+  if (!isReady) {
+    return (
+      <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 shadow-sm my-6 font-sans">
+        <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center mx-auto mb-3">
+          <Sparkles className="w-6 h-6 text-indigo-600 animate-pulse" />
+        </div>
+        <h3 className="text-sm font-bold text-slate-800">Initializing Tender Analytics Hub...</h3>
+        <p className="text-xs text-slate-500 mt-1 font-mono">Computing nationwide sector allocations & ministry budgets...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 text-slate-800 font-sans">
