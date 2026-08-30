@@ -576,6 +576,9 @@ interface TenderExplorerProps {
   activeAdType?: 'google' | 'custom';
   watchlistedIds?: string[];
   onToggleWatchlist?: (id: string) => void;
+  onLoadArchived?: () => void;
+  isArchivedLoaded?: boolean;
+  isLoadingArchived?: boolean;
 }
 
 export default function TenderExplorer({
@@ -589,7 +592,10 @@ export default function TenderExplorer({
   customAdImage = '',
   activeAdType = 'custom',
   watchlistedIds = [],
-  onToggleWatchlist
+  onToggleWatchlist,
+  onLoadArchived,
+  isArchivedLoaded = false,
+  isLoadingArchived = false
 }: TenderExplorerProps) {
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -690,7 +696,7 @@ export default function TenderExplorer({
   const [notificationStatus, setNotificationStatus] = useState<string | null>(null);
   const [showStatusSuccess, setShowStatusSuccess] = useState(false);
 
-  const [deadlineFilter, setDeadlineFilter] = useState<'active' | 'archived' | 'all'>('all');
+  const [deadlineFilter, setDeadlineFilter] = useState<'active' | 'archived' | 'all'>('active');
 
   const isTenderArchived = (tender: Tender): boolean => {
     // Strictly check Document Last Selling / Application Date
@@ -996,23 +1002,33 @@ export default function TenderExplorer({
               Live ({totalActiveCount})
             </button>
             <button
-              onClick={() => setDeadlineFilter('archived')}
+              onClick={() => {
+                setDeadlineFilter('archived');
+                if (!isArchivedLoaded && onLoadArchived) {
+                  onLoadArchived();
+                }
+              }}
               className={`px-2.5 py-1 rounded-md text-[11px] font-bold font-mono transition-all flex items-center gap-1 cursor-pointer select-none h-7 ${deadlineFilter === 'archived'
                   ? 'bg-white text-slate-800 shadow-2xs border border-slate-200'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-              Archived ({totalArchivedCount})
+              Archived ({isLoadingArchived ? "Loading..." : totalArchivedCount})
             </button>
             <button
-              onClick={() => setDeadlineFilter('all')}
+              onClick={() => {
+                setDeadlineFilter('all');
+                if (!isArchivedLoaded && onLoadArchived) {
+                  onLoadArchived();
+                }
+              }}
               className={`px-2.5 py-1 rounded-md text-[11px] font-bold font-mono transition-all flex items-center gap-1 cursor-pointer select-none h-7 ${deadlineFilter === 'all'
                   ? 'bg-white text-indigo-800 shadow-2xs border border-indigo-200/40'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
             >
-              All ({totalAllCount})
+              All ({isLoadingArchived ? "Loading..." : totalAllCount})
             </button>
           </div>
         </div>
