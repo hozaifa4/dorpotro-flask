@@ -1,12 +1,9 @@
 import React, { useState, Component } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Building2, Landmark, ShieldCheck, Layers, Terminal, Sparkles, 
-  MapPin, HelpCircle, FileText, ChevronRight, Briefcase, Key, Star, Info,
-  Bell, Menu, TrendingUp, Percent, Award, AlertCircle, TrendingDown,
-  Gavel, CheckCircle, BarChart3, HelpCircle as HelpIcon, X, Search, ChevronDown, BookOpen,
-  Mail, Phone, LogOut, Calculator, Plus, Trash2, Share2, WifiOff, Database, HardDrive,
-  Moon, Sun, PanelLeftClose, PanelLeftOpen
+  Building2, ShieldCheck, Layers, Sparkles, Briefcase, Star, Info,
+  Bell, Menu, AlertCircle, Gavel, CheckCircle, BarChart3, X,
+  Mail, Phone, LogOut, Plus, Trash2, Database, HardDrive
 } from 'lucide-react';
 import { Tender, User, PaymentWebhookLog, SavedFilter, ProactiveNotification } from './types';
 import { sanitizeTenderRecord } from './utils/sanitizeTender';
