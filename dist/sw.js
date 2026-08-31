@@ -1,16 +1,10 @@
 // DORPOTRO.BD Offline Service Worker
 // Provides high-reliability SPA static asset shell caching 
 
-const CACHE_NAME = 'dorpotro-static-v8';
+const CACHE_NAME = 'dorpotro-static-v9';
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html',
-  '/src/main.tsx',
-  '/src/App.tsx',
-  '/src/index.css',
-  '/src/tenderData.ts',
-  '/src/types.ts',
-  '/src/safeguard.ts'
+  '/index.html'
 ];
 
 // Install Event
