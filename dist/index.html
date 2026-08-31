@@ -38,43 +38,41 @@
       })(window, document, "clarity", "script", "ya1kwjduvs");
     </script>
 
-    <!-- ⚡ Vercel Web Analytics & Speed Insights -->
+    <!-- ⚡ Vercel Web Analytics -->
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-      try {
-        var vaScript = document.createElement('script');
-        vaScript.src = '/_vercel/insights/script.js';
-        vaScript.defer = true;
-        document.head.appendChild(vaScript);
-
-        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
-        var siScript = document.createElement('script');
-        siScript.src = '/_vercel/speed-insights/script.js';
-        siScript.defer = true;
-        document.head.appendChild(siScript);
-      } catch (e) {}
     </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+
+    <!-- 🚀 Vercel Speed Insights (Core Web Vitals & Real Experience Score) -->
+    <script>
+      window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
 
     <script>
       (function() {
         try {
-          var currentFetch = window.fetch || globalThis.fetch;
-          if (currentFetch) {
-            Object.defineProperty(window, 'fetch', {
-              get: function() { return currentFetch; },
-              set: function(v) { currentFetch = v; },
-              configurable: true,
-              enumerable: true
-            });
-            Object.defineProperty(globalThis, 'fetch', {
-              get: function() { return currentFetch; },
-              set: function(v) { currentFetch = v; },
-              configurable: true,
-              enumerable: true
-            });
-          }
+          var initialTenders = {{ initial_tenders_json | default('null') | safe }};
+          var nativeFetch = window.fetch || globalThis.fetch;
+          
+          var customFetch = function(url, options) {
+            if (initialTenders && typeof url === 'string' && url.indexOf('/api/tenders') !== -1) {
+              return Promise.resolve(new Response(JSON.stringify({
+                total: initialTenders.length,
+                tenders: initialTenders
+              }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+              }));
+            }
+            return nativeFetch.apply(this, arguments);
+          };
+
+          window.fetch = customFetch;
+          globalThis.fetch = customFetch;
         } catch (e) {
-          console.warn('Sandbox fetch setter override failed:', e);
+          console.warn('Initial tender injector notice:', e);
         }
       })();
     </script>
@@ -87,8 +85,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
     <style>
+      * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
       html, body, input, select, textarea, button {
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
@@ -96,21 +97,22 @@
       .font-display, [class*="font-display"], .logo-font {
         font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       }
-      .font-mono, [class*="font-mono"] {
+      .font-mono, [class*="font-mono"], code, pre, kbd {
         font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
       }
       button[title*="Watchlist"] {
         display: none !important;
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-D_Px0KzQ.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-icons-DF-0z8Fo.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-charts-B5H75f_e.js">
+    <script type="module" crossorigin src="/assets/index-Uw7YIy0f.js?v=3.6"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-icons-DX_nn9bc.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-charts-ej_41Lsb.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-motion-g0aTdGad.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-DPajuOnG.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-Wty5Lcr0.css?v=3.6">
   </head>
   <body>
     <div id="root"></div>
+
     <!-- 🟢 Floating WhatsApp Contact Button (Compact Dismissible) -->
     <div id="dorpotro-wa-widget" style="position: fixed; bottom: 18px; right: 18px; z-index: 999999; display: flex; align-items: center; justify-content: center;">
       <button
