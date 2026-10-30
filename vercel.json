@@ -39,10 +39,6 @@
       "dest": "app.py"
     },
     {
-      "src": "/(tenders_parsed_cache\\.json|tenders\\.json)",
-      "dest": "app.py"
-    },
-    {
       "src": "/(.*)",
       "headers": {
         "Cache-Control": "public, max-age=0, must-revalidate"

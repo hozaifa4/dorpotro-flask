@@ -34,7 +34,6 @@ _cache_lock = threading.Lock()
 # Server-side in-memory tiered caches
 _active_cache = {
     "fetched_at": 0.0,
-    "mtime": 0.0,
     "records": [],
     "active_count": 0,
     "archived_count": 0,
@@ -312,7 +311,7 @@ def ensure_active_loaded():
         now_dt = now_bd()
         now_bd_ts = now_dt.timestamp()
 
-        # 1. Primary Fast Path: R2 Active Tenders JSON
+        # Fetch from Cloudflare R2 CDN (primary active tier, with master R2 fallback)
         for url in (R2_ACTIVE_URL, R2_CDN_URL):
             try:
                 raw_data = fetch_r2_json(url, timeout=10)
@@ -355,54 +354,6 @@ def ensure_active_loaded():
                     return
             except Exception as e:
                 print(f"[Dorpotro R2 Notice] {url} fetch failed: {e}")
-
-        # 2. Local Disk Fallback
-        candidate_paths = [
-            os.path.join(BASE_DIR, "raw_datasets", "tenders_parsed_cache.json"),
-            os.path.join(BASE_DIR, "tenders_parsed_cache.json"),
-            os.path.join(DIST_DIR, "tenders.json"),
-        ]
-        for path in candidate_paths:
-            if os.path.exists(path):
-                try:
-                    mtime = os.path.getmtime(path)
-                    if mtime == _active_cache["mtime"] and _active_cache["records"]:
-                        _active_cache["fetched_at"] = now_ts
-                        return
-
-                    with open(path, "r", encoding="utf-8") as f:
-                        raw_data = json.load(f)
-
-                    raw_list = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
-                    if not isinstance(raw_list, list):
-                        continue
-
-                    processed = [clean_tender_display_description(t, in_place=True) for t in raw_list if isinstance(t, dict)]
-                    sort_records(processed)
-
-                    act_recs = [r for r in processed if r["_sell_ts"] >= now_bd_ts]
-                    arc_recs = [r for r in processed if r["_sell_ts"] < now_bd_ts]
-                    full_meta = build_meta(processed)
-
-                    _archived_cache.update({
-                        "fetched_at": now_ts,
-                        "records": arc_recs,
-                        "loaded": True,
-                        "merged_meta": full_meta,
-                    })
-                    _active_cache.update({
-                        "fetched_at": now_ts,
-                        "mtime": mtime,
-                        "records": act_recs,
-                        "active_count": len(act_recs),
-                        "archived_count": len(arc_recs),
-                        "total_count": len(processed),
-                        "last_updated": (raw_data.get("last_updated") if isinstance(raw_data, dict) else None) or now_dt.strftime("%d-%b-%Y %H:%M:%S"),
-                        "meta": full_meta,
-                    })
-                    return
-                except Exception as e:
-                    print(f"[Dorpotro Local Fallback Notice] Error reading {path}: {e}")
 
 
 def ensure_archived_loaded():
@@ -493,11 +444,10 @@ def get_tenders_api():
     """
     ensure_active_loaded()
 
-    page_raw = request.args.get("page", "").strip()
-    limit_raw = request.args.get("limit", "").strip()
-    is_paginated = bool(page_raw or limit_raw)
+    page_raw = request.args.get("page", "1").strip()
+    limit_raw = request.args.get("limit", "16").strip()
 
-    tab_raw = request.args.get("tab", "active" if is_paginated else "all").strip().lower()
+    tab_raw = request.args.get("tab", "active").strip().lower()
     if tab_raw == "closed":
         tab = "archived"
     elif tab_raw in ("active", "archived", "all"):
@@ -602,53 +552,37 @@ def get_tenders_api():
                     id_match_obj = strip_internal_fields(r)
                     break
 
-    if is_paginated:
-        try:
-            limit = max(1, min(100, int(limit_raw or 16)))
-        except ValueError:
-            limit = 16
-        total_pages = max(1, math.ceil(tab_total / limit)) if tab_total > 0 else 1
-        try:
-            page = max(1, min(total_pages, int(page_raw or 1)))
-        except ValueError:
-            page = 1
+    try:
+        limit = max(1, min(100, int(limit_raw or 16)))
+    except ValueError:
+        limit = 16
+    total_pages = max(1, math.ceil(tab_total / limit)) if tab_total > 0 else 1
+    try:
+        page = max(1, min(total_pages, int(page_raw or 1)))
+    except ValueError:
+        page = 1
 
-        start = (page - 1) * limit
-        end = start + limit
-        page_items = [strip_internal_fields(r) for r in target_list[start:end]]
+    start = (page - 1) * limit
+    end = start + limit
+    page_items = [strip_internal_fields(r) for r in target_list[start:end]]
 
-        payload = {
-            "total": tab_total,
-            "page": page,
-            "limit": limit,
-            "total_pages": total_pages,
-            "active_count": act_count,
-            "archived_count": arc_count,
-            "all_count": all_count,
-            "unfiltered_active_count": unfiltered_active_count,
-            "last_updated": _active_cache["last_updated"],
-            "id_match": id_match_obj,
-            "tenders": page_items,
-        }
-        if include_meta:
-            payload["meta"] = _archived_cache["merged_meta"] or _active_cache["meta"] or build_meta(active_pool)
+    payload = {
+        "total": tab_total,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+        "active_count": act_count,
+        "archived_count": arc_count,
+        "all_count": all_count,
+        "unfiltered_active_count": unfiltered_active_count,
+        "last_updated": _active_cache["last_updated"],
+        "id_match": id_match_obj,
+        "tenders": page_items,
+    }
+    if include_meta:
+        payload["meta"] = _archived_cache["merged_meta"] or _active_cache["meta"] or build_meta(active_pool)
 
-        return cached_json_response(payload, max_age=30, s_maxage=120)
-
-    # Legacy unpaginated fallback
-    items = [strip_internal_fields(r) for r in target_list]
-    return cached_json_response(
-        {
-            "total": len(items),
-            "active_count": act_count,
-            "archived_count": arc_count,
-            "all_count": all_count,
-            "last_updated": _active_cache["last_updated"],
-            "tenders": items,
-        },
-        max_age=30,
-        s_maxage=120,
-    )
+    return cached_json_response(payload, max_age=30, s_maxage=120)
 
 
 @app.route("/api/analytics")
@@ -669,25 +603,6 @@ def get_analytics_api():
             "total": len(slim),
             "last_updated": _active_cache["last_updated"],
             "tenders": slim,
-        },
-        max_age=60,
-        s_maxage=300,
-    )
-
-
-@app.route("/tenders_parsed_cache.json")
-@app.route("/dist/tenders.json")
-@app.route("/tenders.json")
-def serve_static_cache():
-    ensure_active_loaded()
-    items = [strip_internal_fields(r) for r in _active_cache["records"]]
-    return cached_json_response(
-        {
-            "total": len(items),
-            "active_count": _active_cache["active_count"],
-            "archived_count": _active_cache["archived_count"],
-            "last_updated": _active_cache["last_updated"],
-            "tenders": items,
         },
         max_age=60,
         s_maxage=300,
