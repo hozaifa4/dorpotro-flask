@@ -5,6 +5,7 @@ import gzip
 import json
 import math
 import time
+import threading
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from flask import Flask, jsonify, make_response, request, send_from_directory
@@ -21,11 +22,14 @@ app = Flask(
 
 # Bangladesh Standard Time (UTC+6) so Vercel UTC servers classify deadlines accurately
 BD_TZ = timezone(timedelta(hours=6))
+EXCEL_EPOCH_BD = datetime(1899, 12, 30, 0, 0, tzinfo=BD_TZ)
 
 R2_BASE = "https://pub-73034fb3150341c9b860d40d094b488f.r2.dev"
 R2_ACTIVE_URL = os.environ.get("DORPOTRO_ACTIVE_CDN", f"{R2_BASE}/tenders_active.json")
 R2_ARCHIVED_URL = os.environ.get("DORPOTRO_ARCHIVED_CDN", f"{R2_BASE}/tenders_archived.json")
 R2_CDN_URL = os.environ.get("DORPOTRO_CDN_URL", f"{R2_BASE}/tenders_parsed_cache.json")
+
+_cache_lock = threading.Lock()
 
 # Server-side in-memory tiered caches
 _active_cache = {
@@ -43,10 +47,11 @@ _archived_cache = {
     "fetched_at": 0.0,
     "records": [],
     "loaded": False,
+    "merged_meta": None,
 }
 
 ACTIVE_TTL_SECONDS = 180
-ARCHIVED_TTL_SECONDS = 600
+ARCHIVED_TTL_SECONDS = 1800
 
 ANALYTICS_KEYS = (
     "id",
@@ -80,29 +85,51 @@ PAREN_CODE_RE = re.compile(r"\(([^)]+)\)")
 
 
 def now_bd() -> datetime:
-    """Current naive datetime in Bangladesh Standard Time (UTC+6)."""
-    return datetime.now(BD_TZ).replace(tzinfo=None)
+    """Current timezone-aware datetime in Bangladesh Standard Time (UTC+6)."""
+    return datetime.now(BD_TZ)
 
 
-def parse_dt(d_str) -> datetime:
-    if not d_str:
-        return datetime.min
+def parse_dt(d_str, default_hh: int = 0, default_mm: int = 0):
+    """
+    Parses BD dates ('05-Nov-2026 17:00' or '5-Nov-2026'), ISO dates ('2026-11-05 17:00'),
+    and Excel serial float dates ('46191.5875') into timezone-aware BD_TZ datetimes.
+    """
+    if d_str is None or d_str == "":
+        return None
     s = str(d_str).strip()
-    if not s or s == "N/A":
-        return datetime.min
-    try:
-        m = DATE_RE_BD.match(s)
-        if m:
+    if not s or s in ("N/A", "null", "undefined"):
+        return None
+
+    m = DATE_RE_BD.match(s)
+    if m:
+        try:
             day, mon_str, year, hh, mm = m.groups()
             mon = MONTH_MAP.get(mon_str.lower(), 1)
-            return datetime(int(year), mon, int(day), int(hh or 0), int(mm or 0))
-        m2 = DATE_RE_ISO.match(s)
-        if m2:
+            h_val = int(hh) if hh is not None else default_hh
+            m_val = int(mm) if mm is not None else default_mm
+            return datetime(int(year), mon, int(day), h_val, m_val, tzinfo=BD_TZ)
+        except Exception:
+            pass
+
+    m2 = DATE_RE_ISO.match(s)
+    if m2:
+        try:
             year, mon, day, hh, mm = m2.groups()
-            return datetime(int(year), int(mon), int(day), int(hh or 0), int(mm or 0))
+            h_val = int(hh) if hh is not None else default_hh
+            m_val = int(mm) if mm is not None else default_mm
+            return datetime(int(year), int(mon), int(day), h_val, m_val, tzinfo=BD_TZ)
+        except Exception:
+            pass
+
+    # Fallback: Excel serial float number (e.g. 46191.5875)
+    try:
+        num = float(s)
+        if 35000.0 < num < 60000.0:
+            return EXCEL_EPOCH_BD + timedelta(days=num)
     except Exception:
         pass
-    return datetime.min
+
+    return None
 
 
 def get_short_method(method_str) -> str:
@@ -135,16 +162,15 @@ def get_short_method(method_str) -> str:
     return s
 
 
-def clean_tender_display_description(t: dict) -> dict:
+def clean_tender_display_description(t: dict, in_place: bool = False) -> dict:
     """
     Strips leading slash-separated package codes without slicing valid leading words
-    such as 'Emergency', 'Urgent', or 'Special'. Returns a clean copy with precomputed
-    index fields for sub-millisecond search and filtering.
+    such as 'Emergency', 'Urgent', or 'Special'. Precomputes index fields for fast search.
     """
     if not isinstance(t, dict):
         return t
 
-    rec = dict(t)
+    rec = t if in_place else dict(t)
     tid = str(rec.get("id", "")).replace(".0", "").strip()
     rec["id"] = tid
 
@@ -158,20 +184,24 @@ def clean_tender_display_description(t: dict) -> dict:
             if len(trimmed) > 5:
                 d = trimmed
 
-        cleaned = PKG_PREFIX_RE_1.sub("", d)
-        if cleaned != d and len(cleaned) > 5:
-            d = cleaned.lstrip("\"' -:;,. ")
-        else:
-            cleaned2 = PKG_PREFIX_RE_2.sub("", d)
-            if cleaned2 != d and len(cleaned2) > 5:
-                d = cleaned2.lstrip("\"' -:;,. ")
+        if "/" in d[:75]:
+            cleaned = PKG_PREFIX_RE_1.sub("", d)
+            if cleaned != d and len(cleaned) > 5:
+                d = cleaned.lstrip("\"' -:;,. ")
+            else:
+                cleaned2 = PKG_PREFIX_RE_2.sub("", d)
+                if cleaned2 != d and len(cleaned2) > 5:
+                    d = cleaned2.lstrip("\"' -:;,. ")
 
         d = d.strip("\"'")
         if d:
             rec["packageDescription"] = d
 
-    sell_dt = parse_dt(rec.get("documentLastSellingDate", ""))
-    pub_dt = parse_dt(rec.get("publicationDate", ""))
+    pub_dt = parse_dt(rec.get("publicationDate", ""), default_hh=9, default_mm=0)
+    sell_dt = parse_dt(rec.get("documentLastSellingDate", ""), default_hh=17, default_mm=0)
+    if sell_dt is None and pub_dt is not None:
+        sell_dt = pub_dt + timedelta(days=7)
+
     short_method = get_short_method(rec.get("procurementMethod", ""))
     district = str(rec.get("district") or rec.get("procuringDistrict") or "").strip()
 
@@ -193,8 +223,8 @@ def clean_tender_display_description(t: dict) -> dict:
         )
     ).lower()
 
-    rec["_sell_ts"] = sell_dt.timestamp() if sell_dt != datetime.min else -1.0
-    rec["_pub_ts"] = pub_dt.timestamp() if pub_dt != datetime.min else 0.0
+    rec["_sell_ts"] = sell_dt.timestamp() if sell_dt is not None else -1.0
+    rec["_pub_ts"] = pub_dt.timestamp() if pub_dt is not None else 0.0
     rec["_id_int"] = int(tid) if tid.isdigit() else 0
     rec["_short_method"] = short_method
     rec["_district_norm"] = district
@@ -251,7 +281,7 @@ def fetch_r2_json(url: str, timeout: int = 10):
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Dorpotro-Flask-Backend/2.0",
+            "User-Agent": "Dorpotro-Flask-Backend/2.1",
             "Accept-Encoding": "gzip",
         },
     )
@@ -268,129 +298,148 @@ def fetch_r2_json(url: str, timeout: int = 10):
 def ensure_active_loaded():
     """
     Loads active tenders into server memory (2.1 MB gzip from R2), avoiding loading
-    the 15 MB archived dump unless explicitly requested by the user.
+    the 15 MB archived dump on cold starts unless needed for filtering or archived views.
     """
     now_ts = time.time()
     if _active_cache["records"] and (now_ts - _active_cache["fetched_at"] < ACTIVE_TTL_SECONDS):
         return
 
-    now_dt = now_bd()
-    now_bd_ts = now_dt.timestamp()
+    with _cache_lock:
+        now_ts = time.time()
+        if _active_cache["records"] and (now_ts - _active_cache["fetched_at"] < ACTIVE_TTL_SECONDS):
+            return
 
-    # 1. Primary Fast Path: R2 Active Tenders JSON
-    for url in (R2_ACTIVE_URL, R2_CDN_URL):
-        try:
-            raw_data = fetch_r2_json(url, timeout=10)
-            raw_list = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
-            if isinstance(raw_list, list) and len(raw_list) > 0:
-                processed = [clean_tender_display_description(t) for t in raw_list if isinstance(t, dict)]
-                sort_records(processed)
+        now_dt = now_bd()
+        now_bd_ts = now_dt.timestamp()
 
-                # If fallback master URL was used, split active vs archived in-memory
-                if url == R2_CDN_URL:
+        # 1. Primary Fast Path: R2 Active Tenders JSON
+        for url in (R2_ACTIVE_URL, R2_CDN_URL):
+            try:
+                raw_data = fetch_r2_json(url, timeout=10)
+                raw_list = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
+                if isinstance(raw_list, list) and len(raw_list) > 0:
+                    processed = [clean_tender_display_description(t, in_place=True) for t in raw_list if isinstance(t, dict)]
+                    sort_records(processed)
+
+                    # If fallback master URL was used, split active vs archived in-memory
+                    if url == R2_CDN_URL:
+                        act_recs = [r for r in processed if r["_sell_ts"] >= now_bd_ts]
+                        arc_recs = [r for r in processed if r["_sell_ts"] < now_bd_ts]
+                        _archived_cache.update({
+                            "records": arc_recs,
+                            "fetched_at": now_ts,
+                            "loaded": True,
+                            "merged_meta": build_meta(processed),
+                        })
+                        active_records = act_recs
+                        act_count = len(act_recs)
+                        arc_count = len(arc_recs)
+                        tot_count = len(processed)
+                    else:
+                        active_records = processed
+                        act_count = int(raw_data.get("active_count") or len(active_records)) if isinstance(raw_data, dict) else len(active_records)
+                        arc_count = int(raw_data.get("archived_count") or 0) if isinstance(raw_data, dict) else 0
+                        tot_count = int(raw_data.get("total") or (act_count + arc_count)) if isinstance(raw_data, dict) else (act_count + arc_count)
+                        if _archived_cache["loaded"] and _archived_cache["records"]:
+                            _archived_cache["merged_meta"] = build_meta(active_records + _archived_cache["records"])
+
+                    _active_cache.update({
+                        "fetched_at": now_ts,
+                        "records": active_records,
+                        "active_count": act_count,
+                        "archived_count": arc_count,
+                        "total_count": tot_count,
+                        "last_updated": (raw_data.get("last_updated") if isinstance(raw_data, dict) else None) or now_dt.strftime("%d-%b-%Y %H:%M:%S"),
+                        "meta": build_meta(active_records),
+                    })
+                    return
+            except Exception as e:
+                print(f"[Dorpotro R2 Notice] {url} fetch failed: {e}")
+
+        # 2. Local Disk Fallback
+        candidate_paths = [
+            os.path.join(BASE_DIR, "raw_datasets", "tenders_parsed_cache.json"),
+            os.path.join(BASE_DIR, "tenders_parsed_cache.json"),
+            os.path.join(DIST_DIR, "tenders.json"),
+        ]
+        for path in candidate_paths:
+            if os.path.exists(path):
+                try:
+                    mtime = os.path.getmtime(path)
+                    if mtime == _active_cache["mtime"] and _active_cache["records"]:
+                        _active_cache["fetched_at"] = now_ts
+                        return
+
+                    with open(path, "r", encoding="utf-8") as f:
+                        raw_data = json.load(f)
+
+                    raw_list = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
+                    if not isinstance(raw_list, list):
+                        continue
+
+                    processed = [clean_tender_display_description(t, in_place=True) for t in raw_list if isinstance(t, dict)]
+                    sort_records(processed)
+
                     act_recs = [r for r in processed if r["_sell_ts"] >= now_bd_ts]
                     arc_recs = [r for r in processed if r["_sell_ts"] < now_bd_ts]
-                    _archived_cache["records"] = arc_recs
-                    _archived_cache["fetched_at"] = now_ts
-                    _archived_cache["loaded"] = True
-                    active_records = act_recs
-                    act_count = len(act_recs)
-                    arc_count = len(arc_recs)
-                    tot_count = len(processed)
-                else:
-                    active_records = processed
-                    act_count = int(raw_data.get("active_count") or len(active_records)) if isinstance(raw_data, dict) else len(active_records)
-                    arc_count = int(raw_data.get("archived_count") or 0) if isinstance(raw_data, dict) else 0
-                    tot_count = int(raw_data.get("total") or (act_count + arc_count)) if isinstance(raw_data, dict) else (act_count + arc_count)
+                    full_meta = build_meta(processed)
 
-                _active_cache.update({
-                    "fetched_at": now_ts,
-                    "records": active_records,
-                    "active_count": act_count,
-                    "archived_count": arc_count,
-                    "total_count": tot_count,
-                    "last_updated": (raw_data.get("last_updated") if isinstance(raw_data, dict) else None) or now_dt.strftime("%d-%b-%Y %H:%M:%S"),
-                    "meta": build_meta(active_records),
-                })
-                return
-        except Exception as e:
-            print(f"[Dorpotro R2 Notice] {url} fetch failed: {e}")
-
-    # 2. Local Disk Fallback
-    candidate_paths = [
-        os.path.join(BASE_DIR, "raw_datasets", "tenders_parsed_cache.json"),
-        os.path.join(BASE_DIR, "tenders_parsed_cache.json"),
-        os.path.join(DIST_DIR, "tenders.json"),
-    ]
-    for path in candidate_paths:
-        if os.path.exists(path):
-            try:
-                mtime = os.path.getmtime(path)
-                if mtime == _active_cache["mtime"] and _active_cache["records"]:
-                    _active_cache["fetched_at"] = now_ts
+                    _archived_cache.update({
+                        "fetched_at": now_ts,
+                        "records": arc_recs,
+                        "loaded": True,
+                        "merged_meta": full_meta,
+                    })
+                    _active_cache.update({
+                        "fetched_at": now_ts,
+                        "mtime": mtime,
+                        "records": act_recs,
+                        "active_count": len(act_recs),
+                        "archived_count": len(arc_recs),
+                        "total_count": len(processed),
+                        "last_updated": (raw_data.get("last_updated") if isinstance(raw_data, dict) else None) or now_dt.strftime("%d-%b-%Y %H:%M:%S"),
+                        "meta": full_meta,
+                    })
                     return
-
-                with open(path, "r", encoding="utf-8") as f:
-                    raw_data = json.load(f)
-
-                raw_list = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
-                if not isinstance(raw_list, list):
-                    continue
-
-                processed = [clean_tender_display_description(t) for t in raw_list if isinstance(t, dict)]
-                sort_records(processed)
-
-                act_recs = [r for r in processed if r["_sell_ts"] >= now_bd_ts]
-                arc_recs = [r for r in processed if r["_sell_ts"] < now_bd_ts]
-
-                _archived_cache.update({
-                    "fetched_at": now_ts,
-                    "records": arc_recs,
-                    "loaded": True,
-                })
-                _active_cache.update({
-                    "fetched_at": now_ts,
-                    "mtime": mtime,
-                    "records": act_recs,
-                    "active_count": len(act_recs),
-                    "archived_count": len(arc_recs),
-                    "total_count": len(processed),
-                    "last_updated": (raw_data.get("last_updated") if isinstance(raw_data, dict) else None) or now_dt.strftime("%d-%b-%Y %H:%M:%S"),
-                    "meta": build_meta(processed),
-                })
-                return
-            except Exception as e:
-                print(f"[Dorpotro Local Fallback Notice] Error reading {path}: {e}")
+                except Exception as e:
+                    print(f"[Dorpotro Local Fallback Notice] Error reading {path}: {e}")
 
 
 def ensure_archived_loaded():
-    """Lazily loads archived tenders on the server ONLY when requested."""
+    """Lazily loads archived tenders on the server when filtering or viewing archived/all tabs."""
     ensure_active_loaded()
     now_ts = time.time()
     if _archived_cache["loaded"] and (now_ts - _archived_cache["fetched_at"] < ARCHIVED_TTL_SECONDS):
         return
 
-    try:
-        raw_data = fetch_r2_json(R2_ARCHIVED_URL, timeout=15)
-        raw_list = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
-        if isinstance(raw_list, list):
-            active_ids = {r["id"] for r in _active_cache["records"]}
-            processed = [
-                clean_tender_display_description(t)
-                for t in raw_list
-                if isinstance(t, dict) and str(t.get("id", "")).replace(".0", "").strip() not in active_ids
-            ]
-            sort_records(processed)
-            _archived_cache.update({
-                "fetched_at": now_ts,
-                "records": processed,
-                "loaded": True,
-            })
-            if processed:
-                _active_cache["archived_count"] = len(processed)
-                _active_cache["total_count"] = len(_active_cache["records"]) + len(processed)
-    except Exception as e:
-        print(f"[Dorpotro Archived R2 Notice] {e}")
+    with _cache_lock:
+        now_ts = time.time()
+        if _archived_cache["loaded"] and (now_ts - _archived_cache["fetched_at"] < ARCHIVED_TTL_SECONDS):
+            return
+
+        try:
+            raw_data = fetch_r2_json(R2_ARCHIVED_URL, timeout=15)
+            raw_list = raw_data.get("tenders", raw_data) if isinstance(raw_data, dict) else raw_data
+            if isinstance(raw_list, list):
+                active_ids = {r["id"] for r in _active_cache["records"]}
+                processed = [
+                    clean_tender_display_description(t, in_place=True)
+                    for t in raw_list
+                    if isinstance(t, dict) and str(t.get("id", "")).replace(".0", "").strip() not in active_ids
+                ]
+                sort_records(processed)
+                merged_meta = build_meta(_active_cache["records"] + processed)
+                _archived_cache.update({
+                    "fetched_at": now_ts,
+                    "records": processed,
+                    "loaded": True,
+                    "merged_meta": merged_meta,
+                })
+                if processed:
+                    _active_cache["archived_count"] = len(processed)
+                    _active_cache["total_count"] = len(_active_cache["records"]) + len(processed)
+        except Exception as e:
+            print(f"[Dorpotro Archived R2 Notice] {e}")
 
 
 def record_matches_filters(r: dict, q_tokens: list, nature: str, method: str, district: str, org: str, pe: str, id_set: set = None) -> bool:
@@ -423,15 +472,24 @@ def cached_json_response(payload: dict, max_age: int = 30, s_maxage: int = 120) 
 
 
 @app.route("/")
+@app.route("/index.html")
 def index():
     return send_from_directory(DIST_DIR, "index.html")
+
+
+@app.route("/favicon.svg")
+@app.route("/favicon.ico")
+def serve_favicon():
+    resp = make_response(send_from_directory(DIST_DIR, "favicon.svg", mimetype="image/svg+xml"))
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
 
 
 @app.route("/api/tenders")
 def get_tenders_api():
     """
     On-demand paginated & filtered tenders endpoint.
-    Transfers ~6 KB per page instead of forcing users to download 18+ MB of JSON.
+    Transfers ~10 KB per page instead of forcing users to download 18+ MB of JSON.
     """
     ensure_active_loaded()
 
@@ -468,8 +526,9 @@ def get_tenders_api():
 
     now_bd_ts = now_bd().timestamp()
 
-    # Load archived dataset on the server ONLY when user actually views archived/all or searches by specific IDs
-    need_archived = tab in ("archived", "all") or id_set is not None
+    # Load archived dataset on the server ONLY when user filters/searches or views archived/all tabs
+    # (keeps initial unfiltered Active cold-start ~0.2s while guaranteeing accurate filtered Archived counts)
+    need_archived = tab in ("archived", "all") or has_filters
     if need_archived:
         ensure_archived_loaded()
 
@@ -481,7 +540,7 @@ def get_tenders_api():
     unfiltered_archived_count = (
         len(_archived_cache["records"]) + len(newly_expired)
         if _archived_cache["loaded"]
-        else max(_active_cache["archived_count"], len(newly_expired))
+        else (_active_cache["archived_count"] + len(newly_expired))
     )
 
     if not has_filters:
@@ -498,12 +557,7 @@ def get_tenders_api():
             r for r in active_pool
             if record_matches_filters(r, q_tokens, nature, method, district, org, pe, id_set)
         ]
-        # If user searched a 5+ digit Tender ID on Active tab and 0 active matched, also check archived on server!
-        if not need_archived and len(filtered_active) == 0 and q_raw.isdigit() and len(q_raw) >= 5:
-            ensure_archived_loaded()
-            need_archived = True
-
-        if need_archived or _archived_cache["loaded"]:
+        if _archived_cache["loaded"]:
             arch_source = (newly_expired + _archived_cache["records"]) if newly_expired else _archived_cache["records"]
             filtered_archived = [
                 r for r in arch_source
@@ -532,15 +586,21 @@ def get_tenders_api():
         target_list = sort_records(filtered_active + filtered_archived) if (filtered_active and filtered_archived) else (filtered_active or filtered_archived)
         tab_total = all_count
 
-    # Check ID match banner (matches frontend `y.length >= 4` ID banner)
+    # Check ID match banner (matches frontend `y.length >= 4` ID banner across active & archived)
     id_match_obj = None
     if len(q_raw) >= 4:
-        search_space = target_list if target_list else (filtered_active or filtered_archived)
+        search_space = (filtered_active + filtered_archived) if (filtered_active or filtered_archived) else target_list
+        # Prefer exact ID match first, then substring ID match
         for r in search_space:
-            rid = r.get("id", "")
-            if rid == q_raw or q_raw in rid:
+            if r.get("id", "") == q_raw:
                 id_match_obj = strip_internal_fields(r)
                 break
+        if id_match_obj is None:
+            for r in search_space:
+                rid = r.get("id", "")
+                if q_raw in rid:
+                    id_match_obj = strip_internal_fields(r)
+                    break
 
     if is_paginated:
         try:
@@ -571,7 +631,7 @@ def get_tenders_api():
             "tenders": page_items,
         }
         if include_meta:
-            payload["meta"] = _active_cache["meta"] or build_meta(active_pool)
+            payload["meta"] = _archived_cache["merged_meta"] or _active_cache["meta"] or build_meta(active_pool)
 
         return cached_json_response(payload, max_age=30, s_maxage=120)
 

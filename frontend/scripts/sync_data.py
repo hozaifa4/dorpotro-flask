@@ -177,6 +177,9 @@ def parse_tender_row(headers, row, row_num, file_date=""):
     doc_price = int(parse_num(doc_price_raw)) if doc_price_raw else 500
     if doc_price == 0: doc_price = 500
 
+    est_cost_raw = get_col('Estimated Cost', 'Estimated Value', 'Cost', 'Budget', 'Value')
+    est_cost_amt = parse_num(est_cost_raw)
+
     security_amt_raw = get_col('Tender/Proposal security(Amount in BDT)', 'Tender/Proposal Security(Amount in BDT)', 'Security Amount', 'Tender Security', 'Security', 'Security (BDT)', 'Security(Amount in BDT)')
     security_amt = int(parse_num(security_amt_raw)) if security_amt_raw else 0
     if security_amt == 0:
@@ -192,9 +195,6 @@ def parse_tender_row(headers, row, row_num, file_date=""):
             security_amt = 50000
         else:
             security_amt = 20000
-
-    est_cost_raw = get_col('Estimated Cost', 'Estimated Value', 'Cost', 'Budget', 'Value')
-    est_cost_amt = parse_num(est_cost_raw)
 
     # 5. Ministry, Organization, PE & District
     ministry = get_col('Ministry', 'Ministry Name') or "Ministry of Housing and Public Works"

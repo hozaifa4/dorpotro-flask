@@ -1530,8 +1530,27 @@ export default function TenderExplorer({
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-wrap justify-center font-sans">
+                    {(() => {
+                      const goToTopPage = (targetPage: number) => {
+                        try {
+                          const el = document.activeElement as HTMLElement | null;
+                          if (el && (el.tagName === 'BUTTON' || el.getAttribute('placeholder') === 'Page...')) {
+                            el.blur();
+                          }
+                          window.scrollTo(0, 0);
+                          if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+                          document.documentElement.scrollTop = 0;
+                          document.body.scrollTop = 0;
+                        } catch {}
+                        setCurrentPage(targetPage);
+                        if (typeof requestAnimationFrame === 'function') {
+                          requestAnimationFrame(() => window.scrollTo(0, 0));
+                        }
+                      };
+                      return (
+                        <>
                     <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      onClick={() => goToTopPage(Math.max(1, activePage - 1))}
                       disabled={activePage === 1}
                       className="p-2 rounded-lg border border-slate-205 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white select-none transition-all cursor-pointer flex items-center justify-center min-w-[36px]"
                       title="Previous Page"
@@ -1573,7 +1592,7 @@ export default function TenderExplorer({
                         return (
                           <button
                             key={`page-${p}`}
-                            onClick={() => setCurrentPage(Number(p))}
+                            onClick={() => !isSelected && goToTopPage(Number(p))}
                             className={`w-9 h-9 rounded-lg border text-xs font-mono font-bold select-none transition-all cursor-pointer ${isSelected
                                 ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
                                 : "border-slate-205 text-slate-600 bg-white hover:bg-slate-50"
@@ -1586,7 +1605,7 @@ export default function TenderExplorer({
                     })()}
 
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      onClick={() => goToTopPage(Math.min(totalPages, activePage + 1))}
                       disabled={activePage === totalPages}
                       className="p-2 rounded-lg border border-slate-205 text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white select-none transition-all cursor-pointer flex items-center justify-center min-w-[36px]"
                       title="Next Page"
@@ -1601,7 +1620,7 @@ export default function TenderExplorer({
                           e.preventDefault();
                           const p = parseInt(goToPageInput, 10);
                           if (!isNaN(p) && p >= 1 && p <= totalPages) {
-                            setCurrentPage(p);
+                            if (p !== activePage) goToTopPage(p);
                             setGoToPageInput('');
                           } else {
                             showToast(`Please enter a valid page between 1 and ${totalPages}.`, "error");
@@ -1624,6 +1643,9 @@ export default function TenderExplorer({
                         </button>
                       </form>
                     </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

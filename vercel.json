@@ -19,6 +19,14 @@
       "dest": "/dist/assets/$1"
     },
     {
+      "src": "/favicon\\.(svg|ico)",
+      "headers": {
+        "Cache-Control": "public, max-age=86400",
+        "Content-Type": "image/svg+xml"
+      },
+      "dest": "/dist/favicon.svg"
+    },
+    {
       "src": "/sw\\.js",
       "headers": {
         "Cache-Control": "public, max-age=0, must-revalidate",

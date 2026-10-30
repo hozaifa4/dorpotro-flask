@@ -1,0 +1,22 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 82C68 72 78 57 78 38V18L50 10L22 18V38C22 57 32 72 50 82Z" fill="url(#logo-shield-grad)" stroke="#031636" stroke-width="3.5" stroke-linejoin="round"/>
+  <circle cx="50" cy="46" r="18" fill="url(#gold-radial-grad)"/>
+  <rect x="40" y="34" width="20" height="24" rx="2.5" fill="white" fill-opacity="0.9" stroke="#046c50" stroke-width="2.2"/>
+  <rect x="45" y="46" width="3.5" height="7" rx="0.8" fill="#046c50"/>
+  <rect x="51.5" y="41" width="3.5" height="12" rx="0.8" fill="#6366f1"/>
+  <circle cx="60" cy="56" r="7" stroke="#031636" stroke-width="2.5" fill="white"/>
+  <line x1="65" y1="61" x2="73" y2="69" stroke="#031636" stroke-width="2.8" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="logo-shield-grad" x1="22" y1="10" x2="78" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f3f4f6"/>
+      <stop offset="50%" stop-color="#e5e7eb"/>
+      <stop offset="100%" stop-color="#d1d5db"/>
+    </linearGradient>
+    <linearGradient id="gold-radial-grad" x1="32" y1="28" x2="68" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FEE2E2" stop-opacity="0.2"/>
+      <stop offset="20%" stop-color="#FEF08A"/>
+      <stop offset="60%" stop-color="#FACC15"/>
+      <stop offset="100%" stop-color="#CA8A04"/>
+    </linearGradient>
+  </defs>
+</svg>

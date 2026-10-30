@@ -1,0 +1,16 @@
+# Exclude heavy local datasets, caches, virtualenvs, and unbuilt frontend sources from Vercel Lambda
+venv/
+__pycache__/
+*.pyc
+node_modules/
+frontend/
+raw_datasets/
+tenders_parsed_cache.json
+static/
+templates/
+orga.txt
+*.csv
+*.xlsx
+*.zip
+.env
+config.json

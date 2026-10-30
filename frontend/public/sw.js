@@ -1,10 +1,10 @@
-// DORPOTRO.BD Offline Service Worker (v10)
-// Network-first for HTML & API, Cache-first for immutable hashed static assets
+// DORPOTRO.BD Offline Service Worker (v11)
+// Network-first for HTML & API/JSON, Cache-first for immutable hashed static assets
 
-const CACHE_NAME = 'dorpotro-static-v10';
+const CACHE_NAME = 'dorpotro-static-v11';
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html'
+  '/favicon.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -45,8 +45,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API requests: Network-first with offline cache fallback so live tender data is never stale
-  if (url.pathname.startsWith('/api/')) {
+  // API & JSON requests: Network-first with offline cache fallback so live tender data is never stale
+  if (url.pathname.startsWith('/api/') || url.pathname.endsWith('.json')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -56,7 +56,10 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request).then((res) => res || new Response('{"error":"offline"}', {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        })))
     );
     return;
   }
@@ -68,28 +71,30 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response && response.status === 200) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone));
+            caches.open(CACHE_NAME).then((cache) => cache.put('/', clone));
           }
           return response;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match('/').then((res) => res || caches.match('/index.html')))
     );
     return;
   }
 
-  // Hashed static assets (/assets/*): Cache-first for maximum speed and data savings
+  // Hashed static assets (/assets/*, /favicon.svg): Cache-first with safe offline fallback
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
-      return fetch(event.request).then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      });
+      return fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => new Response('', { status: 503 }));
     })
   );
 });
