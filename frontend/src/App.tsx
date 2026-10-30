@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Tender, User, PaymentWebhookLog, SavedFilter, ProactiveNotification } from './types';
 import { sanitizeTenderRecord } from './utils/sanitizeTender';
+import { mockNoaDataset } from './utils/noaData';
 import TenderExplorer from './components/tenderExplorer';
 import AdminDashboard from './components/adminDashboard';
 import TenderAnalytics from './components/TenderAnalytics';
@@ -131,10 +132,8 @@ export default function App() {
   const loadArchivedTenders = React.useCallback(async () => {
     if (isArchivedLoaded || isLoadingArchived) return;
     setIsLoadingArchived(true);
-    const archivedCdnUrl = (typeof window !== 'undefined' && (window as any).__DORPOTRO_ARCHIVED_CDN__) || 
-                           'https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_archived.json';
     try {
-      const arcRes = await fetch(archivedCdnUrl);
+      const arcRes = await fetch('/api/tenders?page=1&limit=100&tab=archived');
       if (arcRes.ok) {
         const arcData = await arcRes.json();
         const arcList = arcData.tenders || (Array.isArray(arcData) ? arcData : null);
@@ -154,57 +153,28 @@ export default function App() {
     }
   }, [isArchivedLoaded, isLoadingArchived]);
 
-  React.useEffect(() => {
-    const fetchLiveTenders = async () => {
-      const activeCdnUrl = (typeof window !== 'undefined' && (window as any).__DORPOTRO_ACTIVE_CDN__) || 
-                           'https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_active.json';
-      const masterCdnUrl = (typeof window !== 'undefined' && (window as any).__DORPOTRO_CDN_URL__) || 
-                           'https://pub-73034fb3150341c9b860d40d094b488f.r2.dev/tenders_parsed_cache.json';
-
-      // 1. Fast Tier 1: Fetch ONLY Active Tenders (416 KB payload) for instant initial render
-      try {
-        const res = await fetch(activeCdnUrl);
-        if (res.ok) {
-          const data = await res.json();
-          const activeList = data.tenders || (Array.isArray(data) ? data : null);
-          if (activeList && Array.isArray(activeList) && activeList.length > 0) {
-            setTenders(activeList.map(sanitizeTenderRecord));
-            setIsLoadingTenders(false);
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn('Fast active CDN fetch failed, falling back to master CDN...', err);
-      }
-
-      // 2. Fallback: Master Full Dataset
-      const fallbackUrls = [
-        masterCdnUrl,
-        '/api/tenders?tab=all',
-        '/dist/tenders.json',
-        '/tenders.json'
-      ];
-
-      for (const url of fallbackUrls) {
-        try {
-          const res = await fetch(url);
-          if (res.ok) {
-            const data = await res.json();
-            const rawList = data.tenders || (Array.isArray(data) ? data : null);
-            if (rawList && Array.isArray(rawList)) {
-              setTenders(rawList.map(sanitizeTenderRecord));
-              setIsLoadingTenders(false);
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn(`Tender fetch from ${url} failed, checking next fallback...`, err);
+  const fetchLiveTenders = React.useCallback(async () => {
+    setIsLoadingTenders(true);
+    try {
+      const res = await fetch('/api/tenders?page=1&limit=100&tab=active');
+      if (res.ok) {
+        const data = await res.json();
+        const rawList = data.tenders || (Array.isArray(data) ? data : null);
+        if (rawList && Array.isArray(rawList)) {
+          setTenders(rawList.map(sanitizeTenderRecord));
+          setIsLoadingTenders(false);
+          return;
         }
       }
-      setIsLoadingTenders(false);
-    };
-    fetchLiveTenders();
+    } catch (err) {
+      console.warn('Paginated /api/tenders fetch failed:', err);
+    }
+    setIsLoadingTenders(false);
   }, []);
+
+  React.useEffect(() => {
+    fetchLiveTenders();
+  }, [fetchLiveTenders]);
 
   // Watchlist (starred / bookmarked tenders) state
   const [watchlist, setWatchlist] = useState<string[]>(() => {
@@ -241,7 +211,7 @@ export default function App() {
   };
 
   // NOA background sync status state
-  const [noaSyncEnabled, setNoaSyncEnabled] = useState<boolean>(true);
+  const [noaSyncEnabled, setNoaSyncEnabled] = useState<boolean>(false);
   const [noaSyncStatus, setNoaSyncStatus] = useState<{
     isSyncing: boolean;
     lastSyncTime: string | null;
@@ -337,7 +307,7 @@ export default function App() {
       setTenders([]);
       setWatchlist([]);
       setIsSimulatedOffline(false);
-      fetchFlaskTenders();
+      fetchLiveTenders();
       
       const nowText = new Date().toLocaleString();
       setLastCachedTimestamp(nowText);

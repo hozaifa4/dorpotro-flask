@@ -1,38 +1,28 @@
-// DORPOTRO.BD Offline Service Worker
-// Provides high-reliability SPA static asset shell caching 
+// DORPOTRO.BD Offline Service Worker (v10)
+// Network-first for HTML & API, Cache-first for immutable hashed static assets
 
-const CACHE_NAME = 'dorpotro-static-v8';
+const CACHE_NAME = 'dorpotro-static-v10';
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html',
-  '/src/main.tsx',
-  '/src/App.tsx',
-  '/src/index.css',
-  '/src/tenderData.ts',
-  '/src/types.ts',
-  '/src/safeguard.ts'
+  '/index.html'
 ];
 
-// Install Event
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Pre-caching offline client app shell');
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
-        console.warn('[Service Worker] Some shell elements failed initial cache pre-load:', err);
+        console.warn('[Service Worker] Pre-cache notice:', err);
       });
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate Event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Relieving old static caches', cache);
             return caches.delete(cache);
           }
         })
@@ -41,45 +31,64 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event (Caching Strategy: Cache First with network fallback for static resources)
 self.addEventListener('fetch', (event) => {
-  // We ignore non-GET requests or firebase/analytics requests
-  if (event.request.method !== 'GET' || event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('identitytoolkit')) {
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Never intercept cross-origin, analytics, Vercel internals, or service worker itself
+  if (
+    url.origin !== self.location.origin ||
+    url.pathname.startsWith('/_vercel/') ||
+    url.pathname === '/sw.js'
+  ) {
     return;
   }
 
+  // API requests: Network-first with offline cache fallback so live tender data is never stale
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // HTML navigation: Network-first so new deployments appear immediately
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Hashed static assets (/assets/*): Cache-first for maximum speed and data savings
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return from cache, but update asynchronously if it's a critical static file
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse);
-            });
-          }
-        }).catch(() => {/* Ignore network update failures in offline mode */});
-        
         return cachedResponse;
       }
-
-      // Fallback to fetch from live internet
       return fetch(event.request).then((response) => {
-        // If successful, cache a copy of other assets dynamically as navigated
         if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      }).catch((err) => {
-        console.log('[Service Worker Fetch failed; client likely offline]', err);
-        // Fallback for document navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
-        throw err;
       });
     })
   );

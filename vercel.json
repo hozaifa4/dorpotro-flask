@@ -13,26 +13,33 @@
   "routes": [
     {
       "src": "/assets/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
       "dest": "/dist/assets/$1"
+    },
+    {
+      "src": "/sw\\.js",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Content-Type": "application/javascript; charset=utf-8"
+      },
+      "dest": "/dist/sw.js"
     },
     {
       "src": "/api/(.*)",
       "dest": "app.py"
     },
     {
-      "src": "/(.*)",
-      "dest": "/dist/index.html"
-    }
-  ],
-  "headers": [
+      "src": "/(tenders_parsed_cache\\.json|tenders\\.json)",
+      "dest": "app.py"
+    },
     {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "src": "/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      },
+      "dest": "/dist/index.html"
     }
   ]
 }

@@ -13,7 +13,7 @@ import { Tender, User } from '../types';
 import { mockNoaDataset } from '../utils/noaData';
 import { sanitizeTenderRecord, getCleanTenderDescription } from '../utils/sanitizeTender';
 
-const getShortMethod = (tenderOrMethod?: string | Partial<TenderRecord>): string => {
+const getShortMethod = (tenderOrMethod?: string | Partial<Tender>): string => {
   if (!tenderOrMethod) return 'OTM';
   const tender = typeof tenderOrMethod === 'object' ? tenderOrMethod : null;
   const method = typeof tenderOrMethod === 'string' ? tenderOrMethod : tender?.procurementMethod || '';

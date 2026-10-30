@@ -50,38 +50,10 @@
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
 
-    <script>
-      (function() {
-        try {
-          var initialTenders = {{ initial_tenders_json | default('null') | safe }};
-          var nativeFetch = window.fetch || globalThis.fetch;
-          
-          var customFetch = function(url, options) {
-            if (initialTenders && typeof url === 'string' && url.indexOf('/api/tenders') !== -1) {
-              return Promise.resolve(new Response(JSON.stringify({
-                total: initialTenders.length,
-                tenders: initialTenders
-              }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-              }));
-            }
-            return nativeFetch.apply(this, arguments);
-          };
-
-          window.fetch = customFetch;
-          globalThis.fetch = customFetch;
-        } catch (e) {
-          console.warn('Initial tender injector notice:', e);
-        }
-      })();
-    </script>
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
-    <link rel="dns-prefetch" href="https://pub-73034fb3150341c9b860d40d094b488f.r2.dev">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://pub-73034fb3150341c9b860d40d094b488f.r2.dev" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -104,11 +76,11 @@
         display: none !important;
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Uw7YIy0f.js?v=3.6"></script>
+    <script type="module" crossorigin src="/assets/index-Uw7YIy0f.js?v=4.0"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-icons-DX_nn9bc.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-charts-ej_41Lsb.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-motion-g0aTdGad.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-Wty5Lcr0.css?v=3.6">
+    <link rel="stylesheet" crossorigin href="/assets/index-Wty5Lcr0.css?v=4.0">
   </head>
   <body>
     <div id="root"></div>
